@@ -903,6 +903,57 @@ class LanguageState(rx.State):
             "Don't have an account? Register now", "还没有账户？立即注册"
         )
 
+    # ==================== Register Page Translations ====================
+    @rx.var
+    def register_title(self) -> str:
+        return self._t("Sign up AkileCloud", "注册 AkileCloud")
+
+    @rx.var
+    def register_subtitle(self) -> str:
+        return self._t("Sign up AkileCloud", "注册 AkileCloud")
+
+    @rx.var
+    def register_placeholder_username(self) -> str:
+        return self._t("Enter your username", "输入您的用户名")
+
+    @rx.var
+    def register_placeholder_email(self) -> str:
+        return self._t("Enter your email", "输入您的电子邮箱")
+
+    @rx.var
+    def register_placeholder_captcha(self) -> str:
+        return self._t("Enter the captcha", "输入验证码")
+
+    @rx.var
+    def register_btn_captcha(self) -> str:
+        return self._t("Send Captcha", "发送验证码")
+
+    @rx.var
+    def register_placeholder_password(self) -> str:
+        return self._t("Enter your password", "输入您的密码")
+
+    @rx.var
+    def register_placeholder_confirm(self) -> str:
+        return self._t("Repeat your password", "确认您的密码")
+
+    @rx.var
+    def register_placeholder_invitation(self) -> str:
+        return self._t("Enter invitation code (optional)", "输入邀请码（可选）")
+
+    @rx.var
+    def register_btn_submit(self) -> str:
+        return self._t("Sign up", "注册")
+
+    @rx.var
+    def register_btn_submitting(self) -> str:
+        return self._t("Signing up...", "注册中...")
+
+    @rx.var
+    def register_has_account(self) -> str:
+        return self._t(
+            "Already have an account? Log in now", "已有账户？立即登录"
+        )
+
     # ==================== FAQ Section ====================
     @rx.var
     def faq_badge(self) -> str:
