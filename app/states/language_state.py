@@ -1315,3 +1315,208 @@ class LanguageState(rx.State):
     @rx.var
     def footer_legal_aup(self) -> str:
         return self._t("Acceptable Use", "使用规范")
+
+    # ==================== Shop Server Page ====================
+    @rx.var
+    def shop_breadcrumb_home(self) -> str:
+        return self._t("Home", "首页")
+
+    @rx.var
+    def shop_breadcrumb_shop(self) -> str:
+        return self._t("Shop", "商店")
+
+    @rx.var
+    def shop_breadcrumb_server(self) -> str:
+        return self._t("Cloud Servers", "云服务器")
+
+    @rx.var
+    def shop_select_machine(self) -> str:
+        return self._t("Select Machine Type", "选择机型")
+
+    @rx.var
+    def shop_select_region(self) -> str:
+        return self._t("Select Region", "选择地区")
+
+    @rx.var
+    def shop_select_node(self) -> str:
+        return self._t("Select Node", "选择节点")
+
+    @rx.var
+    def shop_select_plan(self) -> str:
+        return self._t("Select Plan", "选择套餐")
+
+    @rx.var
+    def shop_select_system(self) -> str:
+        return self._t("Select System", "选择系统")
+
+    @rx.var
+    def shop_select_cycle(self) -> str:
+        return self._t("Select Purchase Time", "选择购买时长")
+
+    @rx.var
+    def shop_purchase_time(self) -> str:
+        return self._t("Purchase Time", "购买时长")
+
+    @rx.var
+    def shop_coupon(self) -> str:
+        return self._t("Coupon", "优惠码")
+
+    @rx.var
+    def shop_coupon_placeholder(self) -> str:
+        return self._t("Please select coupon", "请选择优惠码")
+
+    @rx.var
+    def shop_coupon_note(self) -> str:
+        return self._t(
+            "Note: You can select coupons after logging in.",
+            "注：登录后可选择优惠码。",
+        )
+
+    @rx.var
+    def shop_order_details(self) -> str:
+        return self._t("Order Details", "订单详情")
+
+    @rx.var
+    def shop_type(self) -> str:
+        return self._t("Type:", "类型:")
+
+    @rx.var
+    def shop_region(self) -> str:
+        return self._t("Region:", "地区:")
+
+    @rx.var
+    def shop_node(self) -> str:
+        return self._t("Node:", "节点:")
+
+    @rx.var
+    def shop_plan(self) -> str:
+        return self._t("Plan:", "套餐:")
+
+    @rx.var
+    def shop_cpu(self) -> str:
+        return self._t("CPU:", "CPU:")
+
+    @rx.var
+    def shop_memory(self) -> str:
+        return self._t("Memory:", "内存:")
+
+    @rx.var
+    def shop_disk(self) -> str:
+        return self._t("Disk:", "硬盘:")
+
+    @rx.var
+    def shop_bandwidth(self) -> str:
+        return self._t("Bandwidth:", "带宽:")
+
+    @rx.var
+    def shop_traffic(self) -> str:
+        return self._t("Traffic:", "流量:")
+
+    @rx.var
+    def shop_system(self) -> str:
+        return self._t("System:", "系统:")
+
+    @rx.var
+    def shop_cycle(self) -> str:
+        return self._t("Cycle:", "周期:")
+
+    @rx.var
+    def shop_agree_terms(self) -> str:
+        return self._t(
+            "I have read and agree to the AkileCloud Service Agreement",
+            "我已阅读并同意 AkileCloud 服务协议",
+        )
+
+    @rx.var
+    def shop_agree_broadcast(self) -> str:
+        return self._t(
+            "Our node is all broadcasting IP, and refunds based on IP location will not be accepted",
+            "本节点均为广播 IP,基于 IP 归属地的退款请求将不予受理",
+        )
+
+    @rx.var
+    def shop_buy_now(self) -> str:
+        return self._t("Buy Now", "立即购买")
+
+    @rx.var
+    def shop_sold_out(self) -> str:
+        return self._t("Sold Out", "已售罄")
+
+    @rx.var
+    def shop_search_placeholder(self) -> str:
+        return self._t(
+            "Search plans, regions, codes...", "搜索套餐、地区、代码..."
+        )
+
+    @rx.var
+    def shop_sort_recommended(self) -> str:
+        return self._t("Recommended", "推荐排序")
+
+    @rx.var
+    def shop_sort_price_asc(self) -> str:
+        return self._t("Price: Low to High", "价格: 从低到高")
+
+    @rx.var
+    def shop_sort_price_desc(self) -> str:
+        return self._t("Price: High to Low", "价格: 从高到低")
+
+    @rx.var
+    def shop_sort_stock(self) -> str:
+        return self._t("Stock", "库存")
+
+    @rx.var
+    def shop_price_range(self) -> str:
+        return self._t("Price Range", "价格范围")
+
+    @rx.var
+    def shop_reset(self) -> str:
+        return self._t("Reset filters", "重置筛选")
+
+    @rx.var
+    def shop_no_results_title(self) -> str:
+        return self._t("No plans found", "未找到套餐")
+
+    @rx.var
+    def shop_no_results_desc(self) -> str:
+        return self._t(
+            "Try changing your filters or region selection.",
+            "请尝试调整筛选条件或选择其他地区。",
+        )
+
+    @rx.var
+    def shop_stock_available(self) -> str:
+        return self._t("In Stock", "有货")
+
+    @rx.var
+    def shop_stock_low(self) -> str:
+        return self._t("Low Stock", "库存紧张")
+
+    @rx.var
+    def shop_result_count_label(self) -> str:
+        return self._t("plans available", "款套餐可选")
+
+    @rx.var
+    def shop_recommended_tag(self) -> str:
+        return self._t("Recommended", "推荐")
+
+    @rx.var
+    def shop_help_title(self) -> str:
+        return self._t("Need Help?", "需要帮助?")
+
+    @rx.var
+    def shop_help_desc(self) -> str:
+        return self._t(
+            "Talk to our engineers 24/7 for custom configurations.",
+            "工程师 7×24 小时在线,为您提供定制方案。",
+        )
+
+    @rx.var
+    def shop_contact_sales(self) -> str:
+        return self._t("Contact Sales", "联系销售")
+
+    @rx.var
+    def shop_info_note(self) -> str:
+        return self._t(
+            "All plans include native IP, streaming unlock, DDoS protection and 24/7 monitoring. Prices in USD.",
+            "所有套餐均包含原生 IP、流媒体解锁、DDoS 防护及 7×24 小时监控。价格以美元计价。",
+        )

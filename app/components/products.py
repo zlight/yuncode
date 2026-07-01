@@ -45,7 +45,7 @@ def _spec_row(icon: str, text: str) -> rx.Component:
 
 
 def _product_card(p) -> rx.Component:
-    return rx.el.div(
+    return rx.el.a(
         rx.el.div(
             rx.el.div(
                 rx.icon(p["icon"], size=20, class_name="text-blue-400"),
@@ -84,6 +84,7 @@ def _product_card(p) -> rx.Component:
             ),
             class_name="flex items-center justify-between",
         ),
+        href="/shop/server",
         class_name="group relative rounded-2xl bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/10 p-6 hover:border-blue-500/30 hover:bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 backdrop-blur-sm flex flex-col",
     )
 
