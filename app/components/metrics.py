@@ -1,87 +1,8 @@
 import reflex as rx
+from app.states.language_state import LanguageState
 
 
-METRICS: list[dict[str, str]] = [
-    {
-        "icon": "trending-up",
-        "value": "99.99%",
-        "label": "SLA Uptime",
-        "desc": "Guaranteed monthly availability with financial-backed SLA.",
-    },
-    {
-        "icon": "users",
-        "value": "50,000+",
-        "label": "Active Customers",
-        "desc": "Trusted by developers, streamers and enterprises worldwide.",
-    },
-    {
-        "icon": "server",
-        "value": "20,000+",
-        "label": "Deployed Servers",
-        "desc": "Running production workloads across our global backbone.",
-    },
-    {
-        "icon": "clock",
-        "value": "< 60s",
-        "label": "Provisioning Time",
-        "desc": "Instant deployment from checkout to fully-booted OS.",
-    },
-    {
-        "icon": "headphones",
-        "value": "24/7",
-        "label": "Expert Support",
-        "desc": "Bilingual engineers on-call for every plan tier.",
-    },
-    {
-        "icon": "shield",
-        "value": "200 Gbps",
-        "label": "DDoS Mitigation",
-        "desc": "Enterprise-grade protection with L3/L4/L7 filtering.",
-    },
-]
-
-
-GUARANTEES: list[dict[str, str]] = [
-    {
-        "icon": "shield-check",
-        "title": "SLA-Backed Uptime",
-        "desc": "99.99% availability guarantee with automatic credit compensation for any downtime beyond commitment.",
-        "tag": "Reliability",
-    },
-    {
-        "icon": "refresh-ccw",
-        "title": "7-Day Money Back",
-        "desc": "Try any plan risk-free. Full refund within 7 days, no questions asked, no hidden fees.",
-        "tag": "Guarantee",
-    },
-    {
-        "icon": "lock",
-        "title": "Data Sovereignty",
-        "desc": "Your data stays in your chosen region. Encrypted at rest with AES-256 and in transit with TLS 1.3.",
-        "tag": "Privacy",
-    },
-    {
-        "icon": "life-buoy",
-        "title": "24/7 Expert Support",
-        "desc": "Direct access to senior engineers via ticket, chat and Telegram — average first response under 5 minutes.",
-        "tag": "Support",
-    },
-    {
-        "icon": "activity",
-        "title": "Real-time Monitoring",
-        "desc": "Live dashboard with CPU, network, disk metrics, alerts and historical graphs at every layer.",
-        "tag": "Observability",
-    },
-    {
-        "icon": "git-branch",
-        "title": "One-click Snapshots",
-        "desc": "Instant snapshots and automated daily backups. Roll back in seconds without service interruption.",
-        "tag": "Backup",
-    },
-]
-
-
-def _metric_card(m: dict[str, str]) -> rx.Component:
+def _metric_card(m) -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.icon(m["icon"], size=18, class_name="text-blue-400"),
@@ -103,7 +24,7 @@ def _metric_card(m: dict[str, str]) -> rx.Component:
     )
 
 
-def _guarantee_card(g: dict[str, str]) -> rx.Component:
+def _guarantee_card(g) -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -135,27 +56,27 @@ def metrics_section() -> rx.Component:
                 rx.el.div(
                     rx.icon("bar-chart-3", size=14, class_name="text-blue-400"),
                     rx.el.span(
-                        "Trusted at Scale",
+                        LanguageState.metrics_badge,
                         class_name="text-xs text-gray-300 font-medium tracking-wide uppercase",
                     ),
                     class_name="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4",
                 ),
                 rx.el.h2(
-                    "Numbers that ",
+                    LanguageState.metrics_title_prefix,
                     rx.el.span(
-                        "speak for themselves",
+                        LanguageState.metrics_title_highlight,
                         class_name="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent",
                     ),
                     class_name="text-3xl md:text-4xl font-semibold text-white tracking-tight mb-3",
                 ),
                 rx.el.p(
-                    "Proven performance and reliability, backed by real customers and real infrastructure.",
+                    LanguageState.metrics_desc,
                     class_name="text-gray-400 max-w-2xl mx-auto",
                 ),
                 class_name="text-center mb-14",
             ),
             rx.el.div(
-                rx.foreach(METRICS, _metric_card),
+                rx.foreach(LanguageState.metrics_list, _metric_card),
                 class_name="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-20",
             ),
             rx.el.div(
@@ -164,27 +85,27 @@ def metrics_section() -> rx.Component:
                         "shield-check", size=14, class_name="text-emerald-400"
                     ),
                     rx.el.span(
-                        "Service Guarantees",
+                        LanguageState.guarantees_badge,
                         class_name="text-xs text-gray-300 font-medium tracking-wide uppercase",
                     ),
                     class_name="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4",
                 ),
                 rx.el.h2(
-                    "Enterprise-grade ",
+                    LanguageState.guarantees_title_prefix,
                     rx.el.span(
-                        "guarantees",
+                        LanguageState.guarantees_title_highlight,
                         class_name="bg-gradient-to-r from-emerald-400 to-cyan-300 bg-clip-text text-transparent",
                     ),
                     class_name="text-3xl md:text-4xl font-semibold text-white tracking-tight mb-3",
                 ),
                 rx.el.p(
-                    "Every plan includes the operational guarantees typically reserved for premium enterprise contracts.",
+                    LanguageState.guarantees_desc,
                     class_name="text-gray-400 max-w-2xl mx-auto",
                 ),
                 class_name="text-center mb-14",
             ),
             rx.el.div(
-                rx.foreach(GUARANTEES, _guarantee_card),
+                rx.foreach(LanguageState.guarantees_list, _guarantee_card),
                 class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5",
             ),
             class_name="max-w-7xl mx-auto px-6",

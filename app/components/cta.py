@@ -1,4 +1,5 @@
 import reflex as rx
+from app.states.language_state import LanguageState
 
 
 def cta_section() -> rx.Component:
@@ -17,27 +18,27 @@ def cta_section() -> rx.Component:
                             "sparkles", size=14, class_name="text-blue-300"
                         ),
                         rx.el.span(
-                            "Ready when you are",
+                            LanguageState.cta_badge,
                             class_name="text-xs text-blue-200 font-medium tracking-wide uppercase",
                         ),
                         class_name="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 mb-6",
                     ),
                     rx.el.h2(
-                        "Deploy your first server in ",
+                        LanguageState.cta_title_prefix,
                         rx.el.span(
-                            "under 60 seconds",
+                            LanguageState.cta_title_highlight,
                             class_name="bg-gradient-to-r from-blue-300 via-cyan-200 to-blue-300 bg-clip-text text-transparent",
                         ),
                         class_name="text-3xl md:text-5xl font-semibold text-white tracking-tight mb-4 max-w-3xl mx-auto",
                     ),
                     rx.el.p(
-                        "Join 50,000+ developers and businesses running production workloads on AkileCloud. No credit card required to start.",
+                        LanguageState.cta_desc,
                         class_name="text-gray-300 text-base md:text-lg mb-8 max-w-2xl mx-auto",
                     ),
                     rx.el.div(
                         rx.el.a(
                             rx.el.button(
-                                "Get Started Free",
+                                LanguageState.cta_btn_primary,
                                 rx.icon(
                                     "arrow-right", size=16, class_name="ml-1.5"
                                 ),
@@ -50,7 +51,7 @@ def cta_section() -> rx.Component:
                                 rx.icon(
                                     "book-open", size=16, class_name="mr-1.5"
                                 ),
-                                "Read Documentation",
+                                LanguageState.cta_btn_secondary,
                                 class_name="flex items-center gap-1 bg-white/10 hover:bg-white/15 border border-white/20 text-white px-6 py-3 rounded-lg font-medium backdrop-blur-sm transition-all",
                             ),
                             href="#",
@@ -63,7 +64,7 @@ def cta_section() -> rx.Component:
                                 "check", size=14, class_name="text-emerald-400"
                             ),
                             rx.el.span(
-                                "7-day money back",
+                                LanguageState.cta_check1,
                                 class_name="text-xs text-gray-300",
                             ),
                             class_name="flex items-center gap-1.5",
@@ -73,7 +74,7 @@ def cta_section() -> rx.Component:
                                 "check", size=14, class_name="text-emerald-400"
                             ),
                             rx.el.span(
-                                "Cancel anytime",
+                                LanguageState.cta_check2,
                                 class_name="text-xs text-gray-300",
                             ),
                             class_name="flex items-center gap-1.5",
@@ -83,7 +84,7 @@ def cta_section() -> rx.Component:
                                 "check", size=14, class_name="text-emerald-400"
                             ),
                             rx.el.span(
-                                "Instant provisioning",
+                                LanguageState.cta_check3,
                                 class_name="text-xs text-gray-300",
                             ),
                             class_name="flex items-center gap-1.5",
@@ -93,7 +94,7 @@ def cta_section() -> rx.Component:
                                 "check", size=14, class_name="text-emerald-400"
                             ),
                             rx.el.span(
-                                "24/7 support",
+                                LanguageState.cta_check4,
                                 class_name="text-xs text-gray-300",
                             ),
                             class_name="flex items-center gap-1.5",

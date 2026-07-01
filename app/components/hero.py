@@ -1,7 +1,8 @@
 import reflex as rx
+from app.states.language_state import LanguageState
 
 
-def _feature_check(text: str) -> rx.Component:
+def _feature_check(text: rx.Var) -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.icon("check", size=12, class_name="text-emerald-400"),
@@ -91,7 +92,7 @@ def _floating_card() -> rx.Component:
         rx.el.div(
             rx.icon("play", size=14, class_name="text-white fill-white"),
             rx.el.span(
-                "Streaming unlocked",
+                LanguageState.hero_streaming,
                 class_name="text-xs text-white font-medium",
             ),
             class_name="absolute -top-4 -right-8 flex items-center gap-1.5 bg-[#141824]/95 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full shadow-lg",
@@ -99,7 +100,7 @@ def _floating_card() -> rx.Component:
         rx.el.div(
             rx.icon("globe", size=12, class_name="text-blue-400"),
             rx.el.span(
-                "100+ PoPs worldwide", class_name="text-[10px] text-gray-300"
+                LanguageState.hero_pops, class_name="text-[10px] text-gray-300"
             ),
             class_name="absolute -bottom-4 left-8 flex items-center gap-1.5 bg-[#141824]/95 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full shadow-lg",
         ),
@@ -116,7 +117,7 @@ def hero() -> rx.Component:
                         class_name="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2"
                     ),
                     rx.el.span(
-                        "Light Server",
+                        LanguageState.hero_badge,
                         class_name="text-xs text-gray-300 font-medium",
                     ),
                     rx.el.span("→", class_name="text-xs text-gray-500 ml-2"),
@@ -124,33 +125,33 @@ def hero() -> rx.Component:
                 ),
                 rx.el.h1(
                     rx.el.span(
-                        "AkileCloud ",
+                        LanguageState.hero_title_highlight,
                         class_name="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent",
                     ),
-                    "Large Bandwidth Streaming Unlocked VPS",
+                    LanguageState.hero_title_suffix,
                     class_name="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white leading-[1.1] mb-6 max-w-2xl",
                 ),
                 rx.el.p(
-                    "A cloud service provider specializing in Global high-bandwidth solutions.",
+                    LanguageState.hero_desc,
                     class_name="text-lg text-gray-400 mb-8 max-w-xl",
                 ),
                 rx.el.div(
-                    _feature_check("Global High-Bandwidth Nodes"),
-                    _feature_check("Native IP Streaming Unlock"),
-                    _feature_check("BGP-Optimized Routes"),
+                    _feature_check(LanguageState.hero_feature1),
+                    _feature_check(LanguageState.hero_feature2),
+                    _feature_check(LanguageState.hero_feature3),
                     class_name="flex flex-wrap items-center gap-6 mb-10",
                 ),
                 rx.el.div(
                     rx.el.a(
                         rx.el.button(
-                            "Overview",
-                            class_name="bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-medium shadow-lg shadow-blue-500/30 transition-all",
+                            LanguageState.hero_btn_overview,
+                            class_name="bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer",
                         ),
                         href="#products",
                     ),
                     rx.el.button(
-                        "Telegram Group",
-                        class_name="border border-white/10 hover:border-white/20 hover:bg-white/5 text-white px-6 py-3 rounded-lg font-medium transition-all",
+                        LanguageState.hero_btn_telegram,
+                        class_name="border border-white/10 hover:border-white/20 hover:bg-white/5 text-white px-6 py-3 rounded-lg font-medium transition-all cursor-pointer",
                     ),
                     class_name="flex items-center gap-3",
                 ),

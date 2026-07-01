@@ -1,74 +1,5 @@
 import reflex as rx
-
-
-PRODUCTS: list[dict[str, str]] = [
-    {
-        "icon": "zap",
-        "tag": "Popular",
-        "tag_color": "blue",
-        "title": "Light Cloud Server",
-        "desc": "Entry-grade streaming-unlocked VPS for personal use, tunnels and light apps.",
-        "spec1": "1-4 vCPU · 1-8 GB RAM",
-        "spec2": "500 Mbps – 1 Gbps",
-        "spec3": "Native IP · Streaming Unlock",
-        "cta": "Explore",
-    },
-    {
-        "icon": "server",
-        "tag": "Recommended",
-        "tag_color": "emerald",
-        "title": "Business Cloud Server",
-        "desc": "Balanced performance, BGP-optimized routes for production workloads.",
-        "spec1": "4-16 vCPU · 8-32 GB RAM",
-        "spec2": "2 Gbps – 5 Gbps",
-        "spec3": "SSD NVMe · DDoS 20 Gbps",
-        "cta": "Explore",
-    },
-    {
-        "icon": "cpu",
-        "tag": "High Performance",
-        "tag_color": "purple",
-        "title": "Enterprise Compute",
-        "desc": "AMD EPYC dedicated cores for latency-sensitive services and clusters.",
-        "spec1": "8-64 vCPU · 32-256 GB RAM",
-        "spec2": "5 Gbps – 10 Gbps",
-        "spec3": "Dedicated CPU · Private Net",
-        "cta": "Explore",
-    },
-    {
-        "icon": "hard-drive",
-        "tag": "Bare Metal",
-        "tag_color": "amber",
-        "title": "Dedicated Servers",
-        "desc": "Fully-managed physical machines with custom hardware configurations.",
-        "spec1": "Xeon / EPYC · up to 1 TB RAM",
-        "spec2": "10 Gbps unmetered options",
-        "spec3": "IPMI · Custom OS · RAID",
-        "cta": "Explore",
-    },
-    {
-        "icon": "radio-tower",
-        "tag": "Streaming",
-        "tag_color": "rose",
-        "title": "Streaming Unlock VPS",
-        "desc": "Native IPs unlocking Netflix, Disney+, HBO, TikTok and more.",
-        "spec1": "2-8 vCPU · 4-16 GB RAM",
-        "spec2": "1 Gbps – 3 Gbps",
-        "spec3": "Native IP · Full Region Unlock",
-        "cta": "Explore",
-    },
-    {
-        "icon": "shield-check",
-        "tag": "Secure",
-        "tag_color": "cyan",
-        "title": "Anti-DDoS Cloud",
-        "desc": "Enterprise DDoS protection up to 200 Gbps with L7 mitigation.",
-        "spec1": "4-16 vCPU · 8-32 GB RAM",
-        "spec2": "Protected 100-200 Gbps",
-        "spec3": "L3/L4/L7 Mitigation · WAF",
-        "cta": "Explore",
-    },
-]
+from app.states.language_state import LanguageState
 
 
 def _tag(text: str, color: str) -> rx.Component:
@@ -113,7 +44,7 @@ def _spec_row(icon: str, text: str) -> rx.Component:
     )
 
 
-def _product_card(p: dict[str, str]) -> rx.Component:
+def _product_card(p) -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -124,11 +55,12 @@ def _product_card(p: dict[str, str]) -> rx.Component:
             class_name="flex items-center justify-between mb-4",
         ),
         rx.el.h3(
-            p["title"], class_name="text-white text-lg font-semibold mb-2"
+            p["title"],
+            class_name="text-white text-lg font-semibold mb-2 min-h-[1.75rem]",
         ),
         rx.el.p(
             p["desc"],
-            class_name="text-sm text-gray-400 leading-relaxed mb-5 min-h-[3rem]",
+            class_name="text-sm text-gray-400 leading-relaxed mb-5 min-h-[3.5rem]",
         ),
         rx.el.div(
             _spec_row("cpu", p["spec1"]),
@@ -147,12 +79,12 @@ def _product_card(p: dict[str, str]) -> rx.Component:
                 class_name="group/btn flex items-center text-sm text-white font-medium hover:text-blue-400 transition-colors",
             ),
             rx.el.span(
-                "View details",
+                LanguageState.products_cta_details,
                 class_name="text-xs text-gray-500 group-hover:text-gray-300 transition-colors",
             ),
             class_name="flex items-center justify-between",
         ),
-        class_name="group relative rounded-2xl bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/10 p-6 hover:border-blue-500/30 hover:bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 backdrop-blur-sm",
+        class_name="group relative rounded-2xl bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/10 p-6 hover:border-blue-500/30 hover:bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 backdrop-blur-sm flex flex-col",
     )
 
 
@@ -163,27 +95,27 @@ def products_section() -> rx.Component:
                 rx.el.div(
                     rx.icon("layers", size=14, class_name="text-blue-400"),
                     rx.el.span(
-                        "Products",
+                        LanguageState.products_badge,
                         class_name="text-xs text-gray-300 font-medium tracking-wide uppercase",
                     ),
                     class_name="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4",
                 ),
                 rx.el.h2(
-                    "Cloud services for ",
+                    LanguageState.products_title_prefix,
                     rx.el.span(
-                        "every scenario",
+                        LanguageState.products_title_highlight,
                         class_name="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent",
                     ),
                     class_name="text-3xl md:text-4xl font-semibold text-white tracking-tight mb-3",
                 ),
                 rx.el.p(
-                    "From streaming-unlocked light servers to enterprise-grade dedicated hardware — one platform, one console, one bill.",
+                    LanguageState.products_desc,
                     class_name="text-gray-400 max-w-2xl mx-auto",
                 ),
                 class_name="text-center mb-14",
             ),
             rx.el.div(
-                rx.foreach(PRODUCTS, _product_card),
+                rx.foreach(LanguageState.products_list, _product_card),
                 class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5",
             ),
             class_name="max-w-7xl mx-auto px-6",

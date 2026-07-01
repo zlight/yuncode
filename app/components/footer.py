@@ -1,43 +1,8 @@
 import reflex as rx
+from app.states.language_state import LanguageState
 
 
-FOOTER_LINKS: dict[str, list[dict[str, str]]] = {
-    "Products": [
-        {"label": "Cloud Servers", "href": "#products"},
-        {"label": "Light Server", "href": "#products"},
-        {"label": "Dedicated Servers", "href": "#products"},
-        {"label": "Streaming Unlock", "href": "#products"},
-        {"label": "Anti-DDoS Cloud", "href": "#products"},
-        {"label": "Enterprise Compute", "href": "#products"},
-    ],
-    "Network": [
-        {"label": "Global Nodes", "href": "#nodes"},
-        {"label": "BGP Routes", "href": "#nodes"},
-        {"label": "DDoS Protection", "href": "#trust"},
-        {"label": "Network Status", "href": "#"},
-        {"label": "IP Tools", "href": "#"},
-        {"label": "Looking Glass", "href": "#"},
-    ],
-    "Resources": [
-        {"label": "Documentation", "href": "#"},
-        {"label": "API Reference", "href": "#"},
-        {"label": "Tutorials", "href": "#"},
-        {"label": "Blog", "href": "#"},
-        {"label": "FAQ", "href": "#faq"},
-        {"label": "Community", "href": "#"},
-    ],
-    "Company": [
-        {"label": "About Us", "href": "#"},
-        {"label": "Contact", "href": "#"},
-        {"label": "Careers", "href": "#"},
-        {"label": "Terms of Service", "href": "#"},
-        {"label": "Privacy Policy", "href": "#"},
-        {"label": "SLA", "href": "#"},
-    ],
-}
-
-
-def _footer_link(item: dict[str, str]) -> rx.Component:
+def _footer_link(item) -> rx.Component:
     return rx.el.a(
         item["label"],
         href=item["href"],
@@ -45,7 +10,7 @@ def _footer_link(item: dict[str, str]) -> rx.Component:
     )
 
 
-def _footer_col(title: str, items: list[dict[str, str]]) -> rx.Component:
+def _footer_col(title, items) -> rx.Component:
     return rx.el.div(
         rx.el.h4(
             title,
@@ -92,13 +57,24 @@ def footer() -> rx.Component:
                         class_name="flex items-center gap-2 mb-4",
                     ),
                     rx.el.p(
-                        "Global high-bandwidth cloud services with streaming-unlocked native IPs. Built for developers, streamers and enterprises.",
+                        LanguageState.footer_desc,
                         class_name="text-sm text-gray-400 mb-6 max-w-xs leading-relaxed",
                     ),
                     rx.el.div(
                         _contact_row("mail", "support@akilecloud.com"),
                         _contact_row("send", "@AkileCloud on Telegram"),
-                        _contact_row("map-pin", "Global · 100+ PoPs"),
+                        rx.el.div(
+                            rx.icon(
+                                "map-pin",
+                                size=14,
+                                class_name="text-blue-400 shrink-0",
+                            ),
+                            rx.el.span(
+                                LanguageState.footer_addr,
+                                class_name="text-sm text-gray-400",
+                            ),
+                            class_name="flex items-center gap-2",
+                        ),
                         class_name="flex flex-col gap-2 mb-6",
                     ),
                     rx.el.div(
@@ -111,10 +87,22 @@ def footer() -> rx.Component:
                     ),
                     class_name="lg:col-span-2",
                 ),
-                _footer_col("Products", FOOTER_LINKS["Products"]),
-                _footer_col("Network", FOOTER_LINKS["Network"]),
-                _footer_col("Resources", FOOTER_LINKS["Resources"]),
-                _footer_col("Company", FOOTER_LINKS["Company"]),
+                _footer_col(
+                    LanguageState.footer_col_products,
+                    LanguageState.footer_products_links,
+                ),
+                _footer_col(
+                    LanguageState.footer_col_network,
+                    LanguageState.footer_network_links,
+                ),
+                _footer_col(
+                    LanguageState.footer_col_resources,
+                    LanguageState.footer_resources_links,
+                ),
+                _footer_col(
+                    LanguageState.footer_col_company,
+                    LanguageState.footer_company_links,
+                ),
                 class_name="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 pb-10 border-b border-white/5",
             ),
             rx.el.div(
@@ -125,13 +113,13 @@ def footer() -> rx.Component:
                                 class_name="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"
                             ),
                             rx.el.span(
-                                "All systems operational",
+                                LanguageState.footer_all_operational,
                                 class_name="text-xs text-gray-300 font-medium",
                             ),
                             class_name="flex items-center gap-2",
                         ),
                         rx.el.a(
-                            "Status page",
+                            LanguageState.footer_status_page,
                             rx.icon(
                                 "arrow-up-right", size=12, class_name="ml-1"
                             ),
@@ -142,7 +130,7 @@ def footer() -> rx.Component:
                     ),
                     rx.el.div(
                         rx.el.span(
-                            "Payments accepted:",
+                            LanguageState.footer_payments_accepted,
                             class_name="text-xs text-gray-500",
                         ),
                         rx.el.div(
@@ -173,39 +161,41 @@ def footer() -> rx.Component:
                     class_name="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 py-6 border-b border-white/5",
                 ),
                 rx.el.div(
-                    rx.el.p(
-                        "© 2025 AkileCloud Technology Ltd. All rights reserved.",
-                        class_name="text-xs text-gray-500",
-                    ),
                     rx.el.div(
-                        rx.el.a(
-                            "Privacy",
-                            href="#",
-                            class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                        rx.el.p(
+                            LanguageState.footer_copy,
+                            class_name="text-xs text-gray-500",
                         ),
-                        rx.el.a(
-                            "Terms",
-                            href="#",
-                            class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                        rx.el.div(
+                            rx.el.a(
+                                LanguageState.footer_legal_privacy,
+                                href="#",
+                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                            ),
+                            rx.el.a(
+                                LanguageState.footer_legal_terms,
+                                href="#",
+                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                            ),
+                            rx.el.a(
+                                "SLA",
+                                href="#",
+                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                            ),
+                            rx.el.a(
+                                LanguageState.footer_legal_cookies,
+                                href="#",
+                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                            ),
+                            rx.el.a(
+                                LanguageState.footer_legal_aup,
+                                href="#",
+                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                            ),
+                            class_name="flex flex-wrap items-center gap-6",
                         ),
-                        rx.el.a(
-                            "SLA",
-                            href="#",
-                            class_name="text-xs text-gray-500 hover:text-white transition-colors",
-                        ),
-                        rx.el.a(
-                            "Cookies",
-                            href="#",
-                            class_name="text-xs text-gray-500 hover:text-white transition-colors",
-                        ),
-                        rx.el.a(
-                            "Acceptable Use",
-                            href="#",
-                            class_name="text-xs text-gray-500 hover:text-white transition-colors",
-                        ),
-                        class_name="flex flex-wrap items-center gap-6",
+                        class_name="flex flex-col md:flex-row items-center justify-between gap-4 pt-6",
                     ),
-                    class_name="flex flex-col md:flex-row items-center justify-between gap-4 pt-6",
                 ),
             ),
             class_name="max-w-7xl mx-auto px-6",

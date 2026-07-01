@@ -1,68 +1,9 @@
 import reflex as rx
 from app.states.pricing_state import PricingState
+from app.states.language_state import LanguageState
 
 
-PLANS: list[dict[str, str | float | bool]] = [
-    {
-        "id": "starter",
-        "name": "Starter",
-        "tag": "",
-        "desc": "For side projects and personal tunnels.",
-        "price": 5.99,
-        "vcpu": "1 vCPU",
-        "ram": "1 GB RAM",
-        "disk": "20 GB NVMe",
-        "bandwidth": "500 Mbps",
-        "traffic": "500 GB / mo",
-        "features": "Native IP · IPv6 · Snapshot · Streaming Unlock",
-        "highlight": False,
-    },
-    {
-        "id": "standard",
-        "name": "Standard",
-        "tag": "Most Popular",
-        "desc": "Balanced VPS for websites and small apps.",
-        "price": 12.99,
-        "vcpu": "2 vCPU",
-        "ram": "4 GB RAM",
-        "disk": "60 GB NVMe",
-        "bandwidth": "1 Gbps",
-        "traffic": "2 TB / mo",
-        "features": "Native IP · Streaming Unlock · Daily Backup · DDoS 20 Gbps",
-        "highlight": True,
-    },
-    {
-        "id": "pro",
-        "name": "Professional",
-        "tag": "Recommended",
-        "desc": "Production-grade compute with premium routes.",
-        "price": 29.99,
-        "vcpu": "4 vCPU",
-        "ram": "8 GB RAM",
-        "disk": "120 GB NVMe",
-        "bandwidth": "2 Gbps",
-        "traffic": "5 TB / mo",
-        "features": "CN2 GIA · Native IP · Priority Support · DDoS 50 Gbps",
-        "highlight": False,
-    },
-    {
-        "id": "business",
-        "name": "Business",
-        "tag": "High Perf",
-        "desc": "Dedicated cores for enterprise workloads.",
-        "price": 69.99,
-        "vcpu": "8 vCPU",
-        "ram": "16 GB RAM",
-        "disk": "240 GB NVMe",
-        "bandwidth": "5 Gbps",
-        "traffic": "10 TB / mo",
-        "features": "Dedicated CPU · Private Net · 24/7 Support · DDoS 100 Gbps",
-        "highlight": False,
-    },
-]
-
-
-def _cycle_button(label: str, value: str, badge: str = "") -> rx.Component:
+def _cycle_button(label, value: str, badge: str = "") -> rx.Component:
     return rx.el.button(
         label,
         rx.cond(
@@ -187,8 +128,8 @@ def _plan_card(p: dict) -> rx.Component:
             rx.el.button(
                 rx.cond(
                     p["highlight"],
-                    "Buy Now",
-                    "Get Started",
+                    LanguageState.pricing_buy_now,
+                    LanguageState.pricing_get_started,
                 ),
                 rx.icon("arrow-right", size=14, class_name="ml-1.5"),
                 class_name=rx.cond(
@@ -204,11 +145,11 @@ def _plan_card(p: dict) -> rx.Component:
                         PricingState.compared_plans.contains(p["id"].to(str)),
                         rx.el.span(
                             rx.icon("check", size=12, class_name="mr-1"),
-                            "Selected for compare",
+                            LanguageState.pricing_selected_compare,
                             class_name="flex items-center justify-center text-xs text-blue-400",
                         ),
                         rx.el.span(
-                            "Add to compare",
+                            LanguageState.pricing_add_compare,
                             class_name="text-xs text-gray-500 hover:text-gray-300",
                         ),
                     ),
@@ -236,28 +177,36 @@ def pricing_section() -> rx.Component:
                 rx.el.div(
                     rx.icon("tag", size=14, class_name="text-blue-400"),
                     rx.el.span(
-                        "Pricing",
+                        LanguageState.pricing_badge,
                         class_name="text-xs text-gray-300 font-medium tracking-wide uppercase",
                     ),
                     class_name="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4",
                 ),
                 rx.el.h2(
-                    "Simple pricing, ",
+                    LanguageState.pricing_title_prefix,
                     rx.el.span(
-                        "scale as you grow",
+                        LanguageState.pricing_title_highlight,
                         class_name="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent",
                     ),
                     class_name="text-3xl md:text-4xl font-semibold text-white tracking-tight mb-3",
                 ),
                 rx.el.p(
-                    "All plans include native IP, streaming unlock, DDoS protection and 24/7 monitoring.",
+                    LanguageState.pricing_desc,
                     class_name="text-gray-400 max-w-2xl mx-auto mb-8",
                 ),
                 rx.el.div(
                     rx.el.div(
-                        _cycle_button("Monthly", "monthly"),
-                        _cycle_button("Quarterly", "quarterly", "-5%"),
-                        _cycle_button("Yearly", "yearly", "-17%"),
+                        _cycle_button(
+                            LanguageState.pricing_cycle_monthly, "monthly"
+                        ),
+                        _cycle_button(
+                            LanguageState.pricing_cycle_quarterly,
+                            "quarterly",
+                            "-5%",
+                        ),
+                        _cycle_button(
+                            LanguageState.pricing_cycle_yearly, "yearly", "-17%"
+                        ),
                         class_name="inline-flex items-center gap-1 p-1 rounded-lg bg-white/[0.03] border border-white/10",
                     ),
                     rx.el.button(
@@ -270,8 +219,8 @@ def pricing_section() -> rx.Component:
                         ),
                         rx.cond(
                             PricingState.compare_mode,
-                            "Exit compare",
-                            "Compare plans",
+                            LanguageState.pricing_exit_compare,
+                            LanguageState.pricing_compare,
                         ),
                         on_click=PricingState.toggle_compare,
                         class_name="inline-flex items-center px-4 py-2 rounded-lg bg-white/[0.03] border border-white/10 text-sm text-gray-300 hover:text-white hover:border-white/20 transition-all",
@@ -292,7 +241,7 @@ def pricing_section() -> rx.Component:
                     class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5",
                 ),
                 rx.el.div(
-                    rx.foreach(PLANS, _plan_card),
+                    rx.foreach(LanguageState.pricing_plans, _plan_card),
                     class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5",
                 ),
             ),
@@ -305,7 +254,8 @@ def pricing_section() -> rx.Component:
                             "git-compare", size=16, class_name="text-blue-400"
                         ),
                         rx.el.span(
-                            f"{PricingState.compared_plans.length()} plan(s) selected",
+                            f"{PricingState.compared_plans.length()} ",
+                            LanguageState.pricing_plans_selected,
                             class_name="text-sm text-white font-medium",
                         ),
                         rx.el.span(
@@ -313,7 +263,7 @@ def pricing_section() -> rx.Component:
                             class_name="text-xs text-gray-400 ml-2",
                         ),
                         rx.el.button(
-                            "Compare now",
+                            LanguageState.pricing_compare_now,
                             rx.icon("arrow-right", size=14, class_name="ml-1"),
                             class_name="ml-auto flex items-center gap-1 px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-400 text-white text-sm font-medium transition-colors",
                         ),
@@ -327,13 +277,13 @@ def pricing_section() -> rx.Component:
                 rx.el.div(
                     rx.icon("info", size=14, class_name="text-gray-500"),
                     rx.el.span(
-                        "All prices in USD. Custom enterprise plans available on request.",
+                        LanguageState.pricing_footer_note,
                         class_name="text-xs text-gray-500",
                     ),
                     class_name="flex items-center gap-2",
                 ),
                 rx.el.a(
-                    "Contact sales",
+                    LanguageState.pricing_contact_sales,
                     rx.icon("arrow-right", size=12, class_name="ml-1"),
                     href="#",
                     class_name="flex items-center text-xs text-blue-400 hover:text-blue-300",

@@ -1,106 +1,23 @@
 import reflex as rx
+from app.states.language_state import LanguageState
 
 
-NODES: list[dict[str, str]] = [
-    {
-        "flag": "🇺🇸",
-        "region": "Los Angeles",
-        "code": "USBGP",
-        "bandwidth": "10 Gbps",
-        "latency": "142 ms",
-        "line": "CN2 GIA · 4837",
-        "load": "62",
-    },
-    {
-        "flag": "🇯🇵",
-        "region": "Tokyo",
-        "code": "JPBGP",
-        "bandwidth": "10 Gbps",
-        "latency": "48 ms",
-        "line": "IIJ · SoftBank BGP",
-        "load": "71",
-    },
-    {
-        "flag": "🇭🇰",
-        "region": "Hong Kong",
-        "code": "HKBGP",
-        "bandwidth": "5 Gbps",
-        "latency": "28 ms",
-        "line": "HKIX · CN2 GIA",
-        "load": "55",
-    },
-    {
-        "flag": "🇸🇬",
-        "region": "Singapore",
-        "code": "SGBGP",
-        "bandwidth": "5 Gbps",
-        "latency": "62 ms",
-        "line": "NTT · Telstra",
-        "load": "44",
-    },
-    {
-        "flag": "🇩🇪",
-        "region": "Frankfurt",
-        "code": "DEBGP",
-        "bandwidth": "10 Gbps",
-        "latency": "182 ms",
-        "line": "DE-CIX · Cogent",
-        "load": "38",
-    },
-    {
-        "flag": "🇬🇧",
-        "region": "London",
-        "code": "UKBGP",
-        "bandwidth": "5 Gbps",
-        "latency": "195 ms",
-        "line": "LINX · Level3",
-        "load": "41",
-    },
-    {
-        "flag": "🇰🇷",
-        "region": "Seoul",
-        "code": "KRBGP",
-        "bandwidth": "3 Gbps",
-        "latency": "52 ms",
-        "line": "KT · LG U+",
-        "load": "48",
-    },
-    {
-        "flag": "🇹🇼",
-        "region": "Taipei",
-        "code": "TWBGP",
-        "bandwidth": "3 Gbps",
-        "latency": "55 ms",
-        "line": "HINET · TWGATE",
-        "load": "50",
-    },
-]
-
-
-NETWORK_STATS: list[dict[str, str]] = [
-    {"icon": "globe", "value": "100+", "label": "Global PoPs"},
-    {"icon": "activity", "value": "10 Gbps", "label": "Peak per Node"},
-    {"icon": "zap", "value": "< 30 ms", "label": "Intra-Asia Latency"},
-    {"icon": "shield", "value": "200 Gbps", "label": "DDoS Mitigation"},
-]
-
-
-def _stat_card(s: dict[str, str]) -> rx.Component:
+def _stat_card(icon: str, value: str, label) -> rx.Component:
     return rx.el.div(
         rx.el.div(
-            rx.icon(s["icon"], size=16, class_name="text-blue-400"),
+            rx.icon(icon, size=16, class_name="text-blue-400"),
             class_name="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3",
         ),
-        rx.el.p(s["value"], class_name="text-2xl font-semibold text-white"),
+        rx.el.p(value, class_name="text-2xl font-semibold text-white"),
         rx.el.p(
-            s["label"],
-            class_name="text-xs text-gray-500 uppercase tracking-wider",
+            label,
+            class_name="text-xs text-gray-500 uppercase tracking-wider min-h-[1rem]",
         ),
         class_name="rounded-xl bg-white/[0.03] border border-white/10 p-5 backdrop-blur-sm hover:bg-white/[0.06] transition-colors",
     )
 
 
-def _node_row(n: dict[str, str]) -> rx.Component:
+def _node_row(n) -> rx.Component:
     return rx.el.tr(
         rx.el.td(
             rx.el.div(
@@ -160,7 +77,7 @@ def _node_row(n: dict[str, str]) -> rx.Component:
                 rx.el.span(
                     class_name="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"
                 ),
-                "Online",
+                LanguageState.nodes_status_online,
                 class_name="inline-flex items-center text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20",
             ),
             class_name="px-6 py-4",
@@ -176,27 +93,32 @@ def nodes_section() -> rx.Component:
                 rx.el.div(
                     rx.icon("globe", size=14, class_name="text-blue-400"),
                     rx.el.span(
-                        "Global Network",
+                        LanguageState.nodes_badge,
                         class_name="text-xs text-gray-300 font-medium tracking-wide uppercase",
                     ),
                     class_name="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4",
                 ),
                 rx.el.h2(
-                    "Global backbone with ",
+                    LanguageState.nodes_title_prefix,
                     rx.el.span(
-                        "BGP-optimized routes",
+                        LanguageState.nodes_title_highlight,
                         class_name="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent",
                     ),
                     class_name="text-3xl md:text-4xl font-semibold text-white tracking-tight mb-3",
                 ),
                 rx.el.p(
-                    "Distributed nodes across Asia, Europe and North America — direct peering, premium transit, low latency.",
+                    LanguageState.nodes_desc,
                     class_name="text-gray-400 max-w-2xl mx-auto",
                 ),
                 class_name="text-center mb-12",
             ),
             rx.el.div(
-                rx.foreach(NETWORK_STATS, _stat_card),
+                _stat_card("globe", "100+", LanguageState.nodes_stat_pops),
+                _stat_card(
+                    "activity", "10 Gbps", LanguageState.nodes_stat_peak
+                ),
+                _stat_card("zap", "< 30 ms", LanguageState.nodes_stat_latency),
+                _stat_card("shield", "200 Gbps", LanguageState.nodes_stat_ddos),
                 class_name="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10",
             ),
             rx.el.div(
@@ -207,13 +129,14 @@ def nodes_section() -> rx.Component:
                                 class_name="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"
                             ),
                             rx.el.span(
-                                "Live network status",
+                                LanguageState.nodes_live_status,
                                 class_name="text-xs text-gray-300 font-medium",
                             ),
                             class_name="flex items-center gap-2",
                         ),
                         rx.el.span(
-                            "Updated 5s ago", class_name="text-xs text-gray-500"
+                            LanguageState.nodes_updated,
+                            class_name="text-xs text-gray-500",
                         ),
                         class_name="flex items-center justify-between px-6 py-4 border-b border-white/5",
                     ),
@@ -222,34 +145,34 @@ def nodes_section() -> rx.Component:
                             rx.el.thead(
                                 rx.el.tr(
                                     rx.el.th(
-                                        "Region",
+                                        LanguageState.nodes_col_region,
                                         class_name="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-6 py-3",
                                     ),
                                     rx.el.th(
-                                        "Bandwidth",
+                                        LanguageState.nodes_col_bandwidth,
                                         class_name="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-6 py-3",
                                     ),
                                     rx.el.th(
-                                        "Latency",
+                                        LanguageState.nodes_col_latency,
                                         class_name="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-6 py-3",
                                     ),
                                     rx.el.th(
-                                        "Line",
+                                        LanguageState.nodes_col_line,
                                         class_name="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-6 py-3",
                                     ),
                                     rx.el.th(
-                                        "Load",
+                                        LanguageState.nodes_col_load,
                                         class_name="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-6 py-3",
                                     ),
                                     rx.el.th(
-                                        "Status",
+                                        LanguageState.nodes_col_status,
                                         class_name="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-6 py-3",
                                     ),
                                 ),
                                 class_name="bg-white/[0.02]",
                             ),
                             rx.el.tbody(
-                                rx.foreach(NODES, _node_row),
+                                rx.foreach(LanguageState.nodes_list, _node_row),
                             ),
                             class_name="table-auto w-full",
                         ),
