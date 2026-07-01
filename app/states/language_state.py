@@ -854,6 +854,55 @@ class LanguageState(rx.State):
             },
         ]
 
+    # ==================== Login Page Translations ====================
+    @rx.var
+    def login_title(self) -> str:
+        return self._t("Log in to your Account", "登录您的账户")
+
+    @rx.var
+    def login_subtitle(self) -> str:
+        return self._t(
+            "Welcome back! Select method to log in.", "欢迎回来！选择登录方式。"
+        )
+
+    @rx.var
+    def login_placeholder_email(self) -> str:
+        return self._t("Enter your email", "输入您的电子邮箱")
+
+    @rx.var
+    def login_placeholder_password(self) -> str:
+        return self._t("Enter your password", "输入您的密码")
+
+    @rx.var
+    def login_remember(self) -> str:
+        return self._t("Remember password", "记住密码")
+
+    @rx.var
+    def login_forgot(self) -> str:
+        return self._t("Forgot password", "忘记密码")
+
+    @rx.var
+    def login_btn_submit(self) -> str:
+        return self._t("Log In", "登录")
+
+    @rx.var
+    def login_btn_logging_in(self) -> str:
+        return self._t("Logging in...", "登录中...")
+
+    @rx.var
+    def login_or(self) -> str:
+        return self._t("Or", "或")
+
+    @rx.var
+    def login_telegram(self) -> str:
+        return self._t("Telegram login", "Telegram 登录")
+
+    @rx.var
+    def login_no_account(self) -> str:
+        return self._t(
+            "Don't have an account? Register now", "还没有账户？立即注册"
+        )
+
     # ==================== FAQ Section ====================
     @rx.var
     def faq_badge(self) -> str:

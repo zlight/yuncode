@@ -8,6 +8,7 @@ from app.components.metrics import metrics_section
 from app.components.faq import faq_section
 from app.components.cta import cta_section
 from app.components.footer import footer
+from app.components.login_view import login_page
 
 
 def _grid_bg() -> rx.Component:
@@ -48,3 +49,4 @@ app = rx.App(
     ],
 )
 app.add_page(index, route="/")
+app.add_page(login_page, route="/login")

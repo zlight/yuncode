@@ -102,13 +102,19 @@ def navbar() -> rx.Component:
                     class_name="flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
                     aria_label="Switch language",
                 ),
-                rx.el.button(
-                    LanguageState.nav_login,
-                    class_name="hidden sm:inline-block text-sm text-gray-300 hover:text-white px-3 py-1.5 font-medium transition-colors cursor-pointer",
+                rx.el.a(
+                    rx.el.button(
+                        LanguageState.nav_login,
+                        class_name="hidden sm:inline-block text-sm text-gray-300 hover:text-white px-3 py-1.5 font-medium transition-colors cursor-pointer",
+                    ),
+                    href="/login",
                 ),
-                rx.el.button(
-                    LanguageState.nav_signup,
-                    class_name="hidden sm:inline-block text-sm bg-blue-500 hover:bg-blue-400 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-lg shadow-blue-500/20 cursor-pointer",
+                rx.el.a(
+                    rx.el.button(
+                        LanguageState.nav_signup,
+                        class_name="hidden sm:inline-block text-sm bg-blue-500 hover:bg-blue-400 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-lg shadow-blue-500/20 cursor-pointer",
+                    ),
+                    href="/login",
                 ),
                 rx.el.button(
                     rx.icon(
@@ -168,13 +174,21 @@ def navbar() -> rx.Component:
                     class_name="px-4 pb-2",
                 ),
                 rx.el.div(
-                    rx.el.button(
-                        LanguageState.nav_login,
-                        class_name="flex-1 text-sm text-gray-300 border border-white/10 hover:border-white/20 px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                    rx.el.a(
+                        rx.el.button(
+                            LanguageState.nav_login,
+                            class_name="w-full text-sm text-gray-300 border border-white/10 hover:border-white/20 px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                        ),
+                        href="/login",
+                        class_name="flex-1",
                     ),
-                    rx.el.button(
-                        LanguageState.nav_signup,
-                        class_name="flex-1 text-sm bg-blue-500 hover:bg-blue-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                    rx.el.a(
+                        rx.el.button(
+                            LanguageState.nav_signup,
+                            class_name="w-full text-sm bg-blue-500 hover:bg-blue-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                        ),
+                        href="/login",
+                        class_name="flex-1",
                     ),
                     class_name="flex items-center gap-2 p-4 border-t border-white/5",
                 ),
