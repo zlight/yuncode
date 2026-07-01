@@ -114,7 +114,7 @@ def navbar() -> rx.Component:
                         LanguageState.nav_signup,
                         class_name="hidden sm:inline-block text-sm bg-blue-500 hover:bg-blue-400 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-lg shadow-blue-500/20 cursor-pointer",
                     ),
-                    href="/login",
+                    href="/register",
                 ),
                 rx.el.button(
                     rx.icon(
@@ -187,7 +187,7 @@ def navbar() -> rx.Component:
                             LanguageState.nav_signup,
                             class_name="w-full text-sm bg-blue-500 hover:bg-blue-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
                         ),
-                        href="/login",
+                        href="/register",
                         class_name="flex-1",
                     ),
                     class_name="flex items-center gap-2 p-4 border-t border-white/5",
