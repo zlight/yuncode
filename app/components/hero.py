@@ -147,7 +147,7 @@ def hero() -> rx.Component:
                             LanguageState.hero_btn_overview,
                             class_name="bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white px-6 py-3 rounded-lg font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer",
                         ),
-                        href="#products",
+                        href="/shop/server",
                     ),
                     rx.el.button(
                         LanguageState.hero_btn_telegram,
