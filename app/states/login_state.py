@@ -8,6 +8,54 @@ class LoginState(rx.State):
     is_submitting: bool = False
     validation_error_en: str = ""
     validation_error_zh: str = ""
+    email_input: str = ""
+    show_suggestions: bool = False
+    common_suffixes: list[str] = [
+        "gmail.com",
+        "qq.com",
+        "outlook.com",
+        "hotmail.com",
+        "icloud.com",
+        "yahoo.com",
+        "163.com",
+        "126.com",
+        "proton.me",
+    ]
+
+    @rx.event
+    def set_email_input(self, val: str):
+        self.email_input = val
+        if val.strip() != "":
+            self.show_suggestions = True
+        else:
+            self.show_suggestions = False
+
+    @rx.event
+    def select_full_email(self, full_email: str):
+        self.email_input = full_email
+        self.show_suggestions = False
+
+    @rx.event
+    def hide_suggestions(self):
+        self.show_suggestions = False
+
+    @rx.var
+    def email_suggestions(self) -> list[str]:
+        val = self.email_input.strip()
+        if not val:
+            return []
+        parts = val.split("@")
+        prefix = parts[0]
+        if not prefix:
+            return []
+        typed_suffix = parts[1] if len(parts) > 1 else ""
+        results: list[str] = []
+        for s in self.common_suffixes:
+            if not typed_suffix:
+                results.append(f"{prefix}@{s}")
+            elif s.startswith(typed_suffix) and s != typed_suffix:
+                results.append(f"{prefix}@{s}")
+        return results
 
     @rx.event
     def toggle_password_visibility(self):
