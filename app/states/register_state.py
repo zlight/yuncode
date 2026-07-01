@@ -83,6 +83,44 @@ class RegisterState(rx.State):
             )
             return
 
+        if len(username) < 3:
+            self.validation_error_en = "Username must be at least 3 characters."
+            self.validation_error_zh = "用户名长度不能少于 3 位。"
+            self.is_submitting = False
+            yield rx.toast(
+                title="Validation Error / 校验错误",
+                description=self.validation_error_zh,
+                duration=4000,
+                close_button=True,
+            )
+            return
+
+        if len(username) > 20:
+            self.validation_error_en = "Username cannot exceed 20 characters."
+            self.validation_error_zh = "用户名长度不能超过 20 位。"
+            self.is_submitting = False
+            yield rx.toast(
+                title="Validation Error / 校验错误",
+                description=self.validation_error_zh,
+                duration=4000,
+                close_button=True,
+            )
+            return
+
+        if not all(c.isalnum() or c == "_" for c in username):
+            self.validation_error_en = (
+                "Username can only contain letters, numbers, and underscores."
+            )
+            self.validation_error_zh = "用户名只能包含字母、数字和下划线。"
+            self.is_submitting = False
+            yield rx.toast(
+                title="Validation Error / 校验错误",
+                description=self.validation_error_zh,
+                duration=4000,
+                close_button=True,
+            )
+            return
+
         if not email:
             self.validation_error_en = "Email is required."
             self.validation_error_zh = "电子邮箱为必填项。"
