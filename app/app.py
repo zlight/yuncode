@@ -44,26 +44,28 @@ def index() -> rx.Component:
         nodes_section(),
         workflow_section(),
         capability_matrix_section(),
-        pricing_section(),
         metrics_section(),
         faq_section(),
         cta_section(),
         footer(),
-        class_name="font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased scroll-smooth",
+        class_name="font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased",
     )
 
 
 app = rx.App(
     theme=rx.theme(appearance="light"),
     head_components=[
-        rx.el.link(rel="preconnect", href="https://fonts.googleapis.com"),
+        rx.el.link(
+            rel="preconnect",
+            href="https://fonts.googleapis.com",
+        ),
         rx.el.link(
             rel="preconnect",
             href="https://fonts.gstatic.com",
             cross_origin="",
         ),
         rx.el.link(
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap",
             rel="stylesheet",
         ),
     ],
