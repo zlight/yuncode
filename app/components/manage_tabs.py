@@ -3,23 +3,6 @@ from app.states.servers_state import ServersState
 from app.states.language_state import LanguageState
 
 
-TOOLTIP_PROPS = {
-    "content_style": {
-        "background": "rgba(15, 23, 42, 0.95)",
-        "borderColor": "rgba(255,255,255,0.1)",
-        "borderRadius": "0.5rem",
-        "fontFamily": "Inter, sans-serif",
-        "fontSize": "0.75rem",
-        "fontWeight": "600",
-        "padding": "0.5rem 0.75rem",
-        "color": "#e2e8f0",
-    },
-    "item_style": {"color": "#e2e8f0"},
-    "label_style": {"color": "#94a3b8", "fontWeight": "700"},
-    "separator": " ",
-}
-
-
 def _card(
     title, icon: str, body, extra=None, accent: str = "cyan"
 ) -> rx.Component:
@@ -1280,6 +1263,89 @@ def _event_row(e) -> rx.Component:
     )
 
 
+def _mini_bar(point: rx.Var, key: str, color: str) -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            class_name=f"w-full rounded-t-sm bg-gradient-to-t from-{color}-500/40 to-{color}-400 transition-all",
+            style={"height": point[key].to_string() + "%"},
+        ),
+        rx.el.span(
+            point["time"],
+            class_name="text-[9px] text-slate-500 font-mono mt-1",
+        ),
+        class_name="flex flex-col items-center justify-end gap-0 flex-1 min-w-0 h-full",
+    )
+
+
+def _css_bar_chart(data_key: str, color: str) -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.foreach(
+                ServersState.monitor_data,
+                lambda p: _mini_bar(p, data_key, color),
+            ),
+            class_name="flex items-end gap-1 h-40",
+        ),
+        class_name="w-full",
+    )
+
+
+def _dual_bar(point: rx.Var) -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                class_name="w-1.5 rounded-t-sm bg-gradient-to-t from-emerald-500/40 to-emerald-400",
+                style={
+                    "height": (point["net_in"].to(int) / 12).to_string() + "%"
+                },
+            ),
+            rx.el.div(
+                class_name="w-1.5 rounded-t-sm bg-gradient-to-t from-amber-500/40 to-amber-400",
+                style={
+                    "height": (point["net_out"].to(int) / 12).to_string() + "%"
+                },
+            ),
+            class_name="flex items-end gap-0.5 h-full",
+        ),
+        rx.el.span(
+            point["time"],
+            class_name="text-[9px] text-slate-500 font-mono mt-1",
+        ),
+        class_name="flex flex-col items-center justify-end flex-1 min-w-0 h-full",
+    )
+
+
+def _css_dual_chart() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.foreach(ServersState.monitor_data, _dual_bar),
+            class_name="flex items-end gap-1 h-40",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.span(
+                    class_name="w-2 h-2 rounded-sm bg-emerald-400 mr-1.5"
+                ),
+                rx.el.span(
+                    "In",
+                    class_name="text-[10px] text-slate-400 font-semibold",
+                ),
+                class_name="flex items-center",
+            ),
+            rx.el.div(
+                rx.el.span(class_name="w-2 h-2 rounded-sm bg-amber-400 mr-1.5"),
+                rx.el.span(
+                    "Out",
+                    class_name="text-[10px] text-slate-400 font-semibold",
+                ),
+                class_name="flex items-center ml-3",
+            ),
+            class_name="flex items-center mt-2",
+        ),
+        class_name="w-full",
+    )
+
+
 def monitor_tab_content() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -1338,36 +1404,7 @@ def monitor_tab_content() -> rx.Component:
             _card(
                 rx.cond(LanguageState.is_zh, "CPU 使用率 (%)", "CPU Usage (%)"),
                 "cpu",
-                rx.recharts.line_chart(
-                    rx.recharts.cartesian_grid(
-                        horizontal=True,
-                        vertical=False,
-                        stroke="rgba(255,255,255,0.05)",
-                    ),
-                    rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
-                    rx.recharts.line(
-                        data_key="cpu",
-                        stroke="#22d3ee",
-                        stroke_width=2,
-                        type_="natural",
-                        dot=False,
-                    ),
-                    rx.recharts.x_axis(
-                        data_key="time",
-                        axis_line=False,
-                        tick_line=False,
-                        custom_attrs={"fontSize": "10px", "fill": "#64748b"},
-                    ),
-                    rx.recharts.y_axis(
-                        axis_line=False,
-                        tick_line=False,
-                        custom_attrs={"fontSize": "10px", "fill": "#64748b"},
-                    ),
-                    data=ServersState.monitor_data,
-                    width="100%",
-                    height=180,
-                    margin={"left": -20, "right": 10, "top": 10, "bottom": 5},
-                ),
+                _css_bar_chart("cpu", "cyan"),
                 accent="cyan",
             ),
             _card(
@@ -1375,36 +1412,7 @@ def monitor_tab_content() -> rx.Component:
                     LanguageState.is_zh, "内存使用率 (%)", "Memory Usage (%)"
                 ),
                 "memory-stick",
-                rx.recharts.line_chart(
-                    rx.recharts.cartesian_grid(
-                        horizontal=True,
-                        vertical=False,
-                        stroke="rgba(255,255,255,0.05)",
-                    ),
-                    rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
-                    rx.recharts.line(
-                        data_key="memory",
-                        stroke="#a78bfa",
-                        stroke_width=2,
-                        type_="natural",
-                        dot=False,
-                    ),
-                    rx.recharts.x_axis(
-                        data_key="time",
-                        axis_line=False,
-                        tick_line=False,
-                        custom_attrs={"fontSize": "10px", "fill": "#64748b"},
-                    ),
-                    rx.recharts.y_axis(
-                        axis_line=False,
-                        tick_line=False,
-                        custom_attrs={"fontSize": "10px", "fill": "#64748b"},
-                    ),
-                    data=ServersState.monitor_data,
-                    width="100%",
-                    height=180,
-                    margin={"left": -20, "right": 10, "top": 10, "bottom": 5},
-                ),
+                _css_bar_chart("memory", "violet"),
                 accent="violet",
             ),
             _card(
@@ -1412,45 +1420,7 @@ def monitor_tab_content() -> rx.Component:
                     LanguageState.is_zh, "网络吞吐 (KB/s)", "Network I/O (KB/s)"
                 ),
                 "activity",
-                rx.recharts.line_chart(
-                    rx.recharts.cartesian_grid(
-                        horizontal=True,
-                        vertical=False,
-                        stroke="rgba(255,255,255,0.05)",
-                    ),
-                    rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
-                    rx.recharts.line(
-                        data_key="net_in",
-                        stroke="#34d399",
-                        stroke_width=2,
-                        type_="natural",
-                        dot=False,
-                        name="In",
-                    ),
-                    rx.recharts.line(
-                        data_key="net_out",
-                        stroke="#fbbf24",
-                        stroke_width=2,
-                        type_="natural",
-                        dot=False,
-                        name="Out",
-                    ),
-                    rx.recharts.x_axis(
-                        data_key="time",
-                        axis_line=False,
-                        tick_line=False,
-                        custom_attrs={"fontSize": "10px", "fill": "#64748b"},
-                    ),
-                    rx.recharts.y_axis(
-                        axis_line=False,
-                        tick_line=False,
-                        custom_attrs={"fontSize": "10px", "fill": "#64748b"},
-                    ),
-                    data=ServersState.monitor_data,
-                    width="100%",
-                    height=180,
-                    margin={"left": -20, "right": 10, "top": 10, "bottom": 5},
-                ),
+                _css_dual_chart(),
                 accent="emerald",
             ),
             _card(
@@ -1458,32 +1428,7 @@ def monitor_tab_content() -> rx.Component:
                     LanguageState.is_zh, "磁盘使用率 (%)", "Disk Usage (%)"
                 ),
                 "hard-drive",
-                rx.recharts.bar_chart(
-                    rx.recharts.cartesian_grid(
-                        horizontal=True,
-                        vertical=False,
-                        stroke="rgba(255,255,255,0.05)",
-                    ),
-                    rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
-                    rx.recharts.bar(
-                        data_key="disk", fill="#fb923c", radius=[3, 3, 0, 0]
-                    ),
-                    rx.recharts.x_axis(
-                        data_key="time",
-                        axis_line=False,
-                        tick_line=False,
-                        custom_attrs={"fontSize": "10px", "fill": "#64748b"},
-                    ),
-                    rx.recharts.y_axis(
-                        axis_line=False,
-                        tick_line=False,
-                        custom_attrs={"fontSize": "10px", "fill": "#64748b"},
-                    ),
-                    data=ServersState.monitor_data,
-                    width="100%",
-                    height=180,
-                    margin={"left": -20, "right": 10, "top": 10, "bottom": 5},
-                ),
+                _css_bar_chart("disk", "orange"),
                 accent="orange",
             ),
             class_name="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4",
