@@ -203,4 +203,14 @@ app.add_page(
     shop_server_page, route="/servers", on_load=ShopState.load_from_query
 )
 app.add_page(shop_server_page, route="/shop", on_load=ShopState.load_from_query)
+app.add_page(
+    shop_server_page,
+    route="/server-catalog",
+    on_load=ShopState.load_from_query,
+)
+app.add_page(
+    shop_server_page,
+    route="/server-directory",
+    on_load=ShopState.load_from_query,
+)
 app.add_page(console_page, route="/console", on_load=ServersState.load_console)

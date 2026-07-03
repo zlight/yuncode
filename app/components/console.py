@@ -468,6 +468,134 @@ def _no_match_state() -> rx.Component:
     )
 
 
+def _server_skeleton() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(class_name="w-11 h-11 rounded-xl bg-white/5"),
+            rx.el.div(
+                rx.el.div(class_name="h-3 w-32 rounded bg-white/10 mb-2"),
+                rx.el.div(class_name="h-2 w-48 rounded bg-white/5"),
+                class_name="ml-3 flex-1",
+            ),
+            class_name="flex items-start mb-4 pb-4 border-b border-white/5",
+        ),
+        rx.el.div(
+            rx.el.div(class_name="h-6 w-20 rounded bg-white/10"),
+            rx.el.div(class_name="ml-2 h-6 w-20 rounded bg-white/5"),
+            class_name="flex items-center animate-pulse",
+        ),
+        class_name="rounded-2xl bg-slate-900/40 backdrop-blur-xl border border-white/5 p-5 animate-pulse",
+    )
+
+
+def _servers_loading_grid() -> rx.Component:
+    return rx.el.div(
+        _server_skeleton(),
+        _server_skeleton(),
+        _server_skeleton(),
+        class_name="flex flex-col gap-4",
+    )
+
+
+def _servers_error_state() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.icon("circle_alert", size=28, class_name="text-rose-300"),
+            class_name="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4",
+        ),
+        rx.el.h3(
+            rx.cond(
+                LanguageState.is_zh,
+                "无法加载服务器列表",
+                "Failed to load servers",
+            ),
+            class_name="text-white font-bold text-base mb-1 text-center",
+        ),
+        rx.el.p(
+            rx.cond(
+                LanguageState.is_zh,
+                ServersState.error_message_zh,
+                ServersState.error_message_en,
+            ),
+            class_name="text-sm text-slate-400 mb-4 font-medium text-center max-w-md mx-auto",
+        ),
+        rx.el.div(
+            rx.el.button(
+                rx.icon("refresh-cw", size=12, class_name="mr-1.5"),
+                rx.cond(LanguageState.is_zh, "重新加载", "Retry"),
+                on_click=ServersState.load_console,
+                class_name="inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white text-xs font-bold transition-all cursor-pointer shadow-lg shadow-indigo-500/20",
+            ),
+            class_name="flex items-center justify-center",
+        ),
+        class_name="rounded-2xl bg-slate-900/40 backdrop-blur-xl border border-rose-500/20 px-6 py-16",
+    )
+
+
+def _servers_status_bar() -> rx.Component:
+    return rx.match(
+        ServersState.list_status,
+        (
+            "loading",
+            rx.el.div(
+                rx.el.span(
+                    class_name="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-2 animate-pulse shadow-lg shadow-cyan-400/50"
+                ),
+                rx.el.span(
+                    rx.cond(
+                        LanguageState.is_zh,
+                        "正在从服务器加载您的实例...",
+                        "Loading your instances...",
+                    ),
+                    class_name="text-xs text-cyan-200 font-semibold",
+                ),
+                class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 mb-4",
+            ),
+        ),
+        (
+            "refreshing",
+            rx.el.div(
+                rx.icon(
+                    "refresh-cw",
+                    size=11,
+                    class_name="text-cyan-300 mr-1.5 animate-spin",
+                ),
+                rx.el.span(
+                    rx.cond(
+                        LanguageState.is_zh, "正在刷新...", "Refreshing..."
+                    ),
+                    class_name="text-xs text-cyan-200 font-semibold",
+                ),
+                class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 mb-4",
+            ),
+        ),
+        (
+            "success",
+            rx.el.div(
+                rx.el.span(
+                    class_name="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2 shadow-lg shadow-emerald-400/50"
+                ),
+                rx.el.span(
+                    rx.cond(
+                        LanguageState.is_zh,
+                        ServersState.instances.length().to_string()
+                        + " 台实例 · 更新于 ",
+                        ServersState.instances.length().to_string()
+                        + " instances · updated ",
+                    ),
+                    class_name="text-xs text-slate-200 font-semibold",
+                ),
+                rx.el.span(
+                    ServersState.last_updated,
+                    class_name="text-xs text-emerald-300 font-mono font-bold",
+                ),
+                class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-4",
+            ),
+        ),
+        rx.fragment(),
+    )
+
+
 def _servers_list_view() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -488,10 +616,19 @@ def _servers_list_view() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.button(
-                    rx.icon("refresh-cw", size=13, class_name="mr-1.5"),
+                    rx.icon(
+                        "refresh-cw",
+                        size=13,
+                        class_name=rx.cond(
+                            ServersState.is_busy,
+                            "mr-1.5 animate-spin text-cyan-300",
+                            "mr-1.5",
+                        ),
+                    ),
                     rx.cond(LanguageState.is_zh, "刷新", "Refresh"),
                     on_click=ServersState.load_console,
-                    class_name="flex items-center px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 text-xs font-semibold transition-all cursor-pointer",
+                    disabled=ServersState.is_busy,
+                    class_name="flex items-center px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 text-xs font-semibold transition-all cursor-pointer",
                 ),
                 rx.el.a(
                     rx.el.button(
@@ -507,8 +644,15 @@ def _servers_list_view() -> rx.Component:
             ),
             class_name="flex items-start gap-4 mb-6",
         ),
-        rx.cond(
-            ServersState.has_instances,
+        _servers_status_bar(),
+        rx.match(
+            ServersState.list_status,
+            ("loading", _servers_loading_grid()),
+            ("error", _servers_error_state()),
+            (
+                "empty",
+                _no_servers_state(),
+            ),
             rx.el.div(
                 rx.el.div(
                     rx.el.div(
@@ -564,12 +708,15 @@ def _servers_list_view() -> rx.Component:
                         rx.foreach(
                             ServersState.filtered_instances, _instance_card
                         ),
-                        class_name="flex flex-col gap-4",
+                        class_name=rx.cond(
+                            ServersState.is_refreshing,
+                            "flex flex-col gap-4 opacity-60 transition-opacity",
+                            "flex flex-col gap-4 transition-opacity",
+                        ),
                     ),
                     _no_match_state(),
                 ),
             ),
-            _no_servers_state(),
         ),
     )
 
@@ -653,10 +800,15 @@ def _action_btn(
 
 def _server_manage_view() -> rx.Component:
     inst = ServersState.selected_instance
-    return rx.cond(
-        ServersState.has_instances,
-        _server_manage_view_body(inst),
-        _no_servers_state(),
+    return rx.match(
+        ServersState.list_status,
+        ("loading", _servers_loading_grid()),
+        ("error", _servers_error_state()),
+        rx.cond(
+            ServersState.has_instances,
+            _server_manage_view_body(inst),
+            _no_servers_state(),
+        ),
     )
 
 

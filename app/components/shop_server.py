@@ -501,8 +501,26 @@ def _filter_bar() -> rx.Component:
                 on_click=ShopState.reset_filters,
                 class_name="flex items-center px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 font-semibold transition-all cursor-pointer",
             ),
+            rx.el.button(
+                rx.icon(
+                    "refresh-cw",
+                    size=12,
+                    class_name=rx.cond(
+                        (ShopState.list_status == "loading")
+                        | (ShopState.list_status == "refreshing"),
+                        "mr-1 animate-spin text-cyan-300",
+                        "mr-1 text-cyan-300",
+                    ),
+                ),
+                rx.cond(LanguageState.is_zh, "刷新", "Refresh"),
+                on_click=ShopState.refresh_catalog,
+                disabled=(ShopState.list_status == "loading")
+                | (ShopState.list_status == "refreshing"),
+                class_name="flex items-center px-3 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all cursor-pointer",
+            ),
             class_name="flex flex-wrap items-center gap-3",
         ),
+        _status_bar(),
         class_name="mb-6",
     )
 
@@ -528,6 +546,174 @@ def _empty_state() -> rx.Component:
             class_name="inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white text-xs font-bold transition-all cursor-pointer shadow-lg shadow-indigo-500/20",
         ),
         class_name="text-center py-16 rounded-2xl bg-slate-900/40 backdrop-blur-xl border border-dashed border-white/10",
+    )
+
+
+def _skeleton_card() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(class_name="h-3 w-1/2 rounded bg-white/10 mb-3"),
+            rx.el.div(class_name="h-3 w-1/3 rounded bg-white/10 mb-4"),
+            rx.el.div(class_name="h-2 w-full rounded bg-white/5 mb-1.5"),
+            rx.el.div(class_name="h-2 w-full rounded bg-white/5 mb-1.5"),
+            rx.el.div(class_name="h-2 w-2/3 rounded bg-white/5 mb-4"),
+            rx.el.div(class_name="h-6 w-24 rounded bg-white/10 mt-3"),
+            class_name="animate-pulse",
+        ),
+        class_name="rounded-xl bg-slate-900/40 backdrop-blur-xl border border-white/5 p-4",
+    )
+
+
+def _loading_grid() -> rx.Component:
+    return rx.el.div(
+        _skeleton_card(),
+        _skeleton_card(),
+        _skeleton_card(),
+        _skeleton_card(),
+        _skeleton_card(),
+        _skeleton_card(),
+        class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
+    )
+
+
+def _error_state() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.icon("circle_alert", size=28, class_name="text-rose-300"),
+            class_name="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4",
+        ),
+        rx.el.h3(
+            rx.cond(
+                LanguageState.is_zh,
+                "无法加载套餐列表",
+                "Failed to load plans",
+            ),
+            class_name="text-white font-bold text-base mb-1 text-center",
+        ),
+        rx.el.p(
+            rx.cond(
+                LanguageState.is_zh,
+                ShopState.error_message_zh,
+                ShopState.error_message_en,
+            ),
+            class_name="text-sm text-slate-400 mb-4 font-medium text-center max-w-md mx-auto",
+        ),
+        rx.el.div(
+            rx.el.button(
+                rx.icon("refresh-cw", size=12, class_name="mr-1"),
+                rx.cond(LanguageState.is_zh, "重新加载", "Retry"),
+                on_click=ShopState.refresh_catalog,
+                class_name="inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white text-xs font-bold transition-all cursor-pointer shadow-lg shadow-indigo-500/20",
+            ),
+            rx.el.button(
+                rx.icon("rotate-ccw", size=12, class_name="mr-1"),
+                LanguageState.shop_reset,
+                on_click=ShopState.reset_filters,
+                class_name="ml-2 inline-flex items-center px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-200 text-xs font-bold hover:border-cyan-500/40 transition-all cursor-pointer",
+            ),
+            class_name="flex items-center justify-center",
+        ),
+        class_name="text-center py-16 rounded-2xl bg-slate-900/40 backdrop-blur-xl border border-rose-500/20",
+    )
+
+
+def _status_bar() -> rx.Component:
+    return rx.el.div(
+        rx.match(
+            ShopState.list_status,
+            (
+                "loading",
+                rx.el.div(
+                    rx.el.span(
+                        class_name="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-2 animate-pulse shadow-lg shadow-cyan-400/50"
+                    ),
+                    rx.el.span(
+                        rx.cond(
+                            LanguageState.is_zh,
+                            "正在从服务器加载套餐...",
+                            "Loading plans from server...",
+                        ),
+                        class_name="text-xs text-cyan-200 font-semibold",
+                    ),
+                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30",
+                ),
+            ),
+            (
+                "refreshing",
+                rx.el.div(
+                    rx.icon(
+                        "refresh-cw",
+                        size=11,
+                        class_name="text-cyan-300 mr-1.5 animate-spin",
+                    ),
+                    rx.el.span(
+                        rx.cond(
+                            LanguageState.is_zh,
+                            "正在刷新...",
+                            "Refreshing...",
+                        ),
+                        class_name="text-xs text-cyan-200 font-semibold",
+                    ),
+                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30",
+                ),
+            ),
+            (
+                "success",
+                rx.el.div(
+                    rx.el.span(
+                        class_name="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2 shadow-lg shadow-emerald-400/50"
+                    ),
+                    rx.el.span(
+                        rx.cond(
+                            LanguageState.is_zh,
+                            ShopState.result_total.to_string() + " 款套餐 · ",
+                            ShopState.result_total.to_string()
+                            + " plans · updated ",
+                        ),
+                        class_name="text-xs text-slate-200 font-semibold",
+                    ),
+                    rx.el.span(
+                        ShopState.last_updated,
+                        class_name="text-xs text-emerald-300 font-mono font-bold",
+                    ),
+                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30",
+                ),
+            ),
+            (
+                "empty",
+                rx.el.div(
+                    rx.icon(
+                        "search-x", size=12, class_name="text-amber-300 mr-1.5"
+                    ),
+                    rx.el.span(
+                        rx.cond(
+                            LanguageState.is_zh,
+                            "无匹配结果",
+                            "No results",
+                        ),
+                        class_name="text-xs text-amber-200 font-semibold",
+                    ),
+                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30",
+                ),
+            ),
+            (
+                "error",
+                rx.el.div(
+                    rx.icon(
+                        "circle_alert",
+                        size=12,
+                        class_name="text-rose-300 mr-1.5",
+                    ),
+                    rx.el.span(
+                        rx.cond(LanguageState.is_zh, "加载失败", "Load failed"),
+                        class_name="text-xs text-rose-200 font-semibold",
+                    ),
+                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30",
+                ),
+            ),
+            rx.fragment(),
+        ),
+        class_name="mb-3",
     )
 
 
@@ -743,16 +929,20 @@ def shop_server_page() -> rx.Component:
                     _filter_bar(),
                     _section(
                         LanguageState.shop_select_plan,
-                        rx.cond(
-                            ShopState.result_count > 0,
+                        rx.match(
+                            ShopState.list_status,
+                            ("loading", _loading_grid()),
+                            ("error", _error_state()),
+                            ("empty", _empty_state()),
                             rx.el.div(
-                                rx.foreach(
-                                    ShopState.filtered_plans, _plan_card
-                                ),
+                                rx.foreach(ShopState.result_plans, _plan_card),
                                 _custom_config_card(),
-                                class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
+                                class_name=rx.cond(
+                                    ShopState.list_status == "refreshing",
+                                    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60 transition-opacity",
+                                    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity",
+                                ),
                             ),
-                            _empty_state(),
                         ),
                     ),
                     _section(

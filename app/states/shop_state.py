@@ -1,4 +1,5 @@
 import reflex as rx
+import asyncio
 import logging
 import secrets
 from datetime import datetime, timezone
@@ -46,6 +47,15 @@ class ShopState(rx.State):
     # email when SessionState / cookies are not hydrated. Production flow
     # always prefers the real SessionState fields and persisted session token.
     test_auth_email: str = ""
+
+    # ==================== Server-side list request state ====================
+    list_status: str = "idle"
+    error_message_en: str = ""
+    error_message_zh: str = ""
+    result_plans: list[ServerPlan] = []
+    result_total: int = 0
+    last_updated: str = ""
+    _initial_loaded: bool = False
 
     regions_data: list[dict[str, str]] = [
         {"id": "mo", "flag": "🇲🇴", "name_en": "Macao", "name_zh": "澳门"},
@@ -526,38 +536,111 @@ class ShopState(rx.State):
 
     @rx.event
     async def load_from_query(self):
-        try:
-            overrides = await user_store.get_stock_overrides()
-        except Exception as e:
-            logging.exception(f"Error loading stock overrides: {e}")
-            overrides = {}
-        if overrides:
-            for i, p in enumerate(self.all_plans):
-                if p["id"] in overrides:
-                    self.all_plans[i]["stock"] = int(overrides[p["id"]])
         region = self.router.url.query_parameters.get("region", "")
         if region:
             self.apply_region_from_nav(region)
+        yield ShopState.fetch_catalog
+
+    @rx.event(background=True)
+    async def fetch_catalog(self):
+        """Server-side request for the plan catalog. Applies stock overrides,
+        filters, and sort on the server side, returning a scoped result set
+        with explicit status (loading/refreshing/success/empty/error)."""
+        async with self:
+            is_first = not self._initial_loaded
+            self.list_status = "loading" if is_first else "refreshing"
+            self.error_message_en = ""
+            self.error_message_zh = ""
+            # snapshot filters
+            region = self.selected_region
+            node = self.selected_node
+            search = self.search_query.strip().lower()
+            pmin = int(self.price_min)
+            pmax = int(self.price_max)
+            sort_by = self.sort_by
+            base_plans = list(self.all_plans)
+
+        # Simulate a lightweight network round-trip so loading state is visible
+        try:
+            await asyncio.sleep(0.35)
+            overrides = await user_store.get_stock_overrides()
+        except Exception as e:
+            logging.exception(f"Error fetching catalog: {e}")
+            async with self:
+                self.list_status = "error"
+                self.error_message_en = (
+                    "Failed to load server catalog. Please try refreshing."
+                )
+                self.error_message_zh = "加载服务器目录失败,请点击刷新重试。"
+                self._initial_loaded = True
+            return
+
+        # Apply overrides
+        merged: list[ServerPlan] = []
+        for p in base_plans:
+            item = dict(p)
+            if item["id"] in overrides:
+                item["stock"] = int(overrides[item["id"]])
+            merged.append(item)  # type: ignore
+
+        # Filter
+        filtered = [
+            p for p in merged if p["region"] == region and p["node"] == node
+        ]
+        if search:
+            filtered = [
+                p
+                for p in filtered
+                if search in p["name"].lower()
+                or search in p["region_code"].lower()
+            ]
+        filtered = [p for p in filtered if pmin <= p["price"] <= pmax]
+
+        if sort_by == "price-asc":
+            filtered = sorted(filtered, key=lambda p: p["price"])
+        elif sort_by == "price-desc":
+            filtered = sorted(filtered, key=lambda p: -p["price"])
+        elif sort_by == "stock":
+            filtered = sorted(filtered, key=lambda p: -p["stock"])
+
+        now_str = datetime.now(timezone.utc).strftime("%H:%M:%S")
+
+        async with self:
+            # persist merged stock overrides into base list too
+            if overrides:
+                for i, p in enumerate(self.all_plans):
+                    if p["id"] in overrides:
+                        self.all_plans[i]["stock"] = int(overrides[p["id"]])
+            self.result_plans = filtered
+            self.result_total = len(filtered)
+            self.last_updated = now_str
+            self.list_status = "success" if filtered else "empty"
+            self._initial_loaded = True
+
+    @rx.event
+    def refresh_catalog(self):
+        return ShopState.fetch_catalog
 
     @rx.event
     def set_machine_type(self, mt: str):
         self.machine_type = mt
+        return ShopState.fetch_catalog
 
     @rx.event
     def set_region(self, region: str):
         self.selected_region = region
-        # Auto-select first available node for this region
         nodes = [p["node"] for p in self.all_plans if p["region"] == region]
         if nodes:
             self.selected_node = nodes[0]
-        # Auto-select first plan
         plans = [p for p in self.all_plans if p["region"] == region]
         if plans:
             self.selected_plan_id = plans[0]["id"]
+        return ShopState.fetch_catalog
 
     @rx.event
     def set_node(self, node: str):
         self.selected_node = node
+        return ShopState.fetch_catalog
 
     @rx.event
     def set_system(self, system: str):
@@ -570,10 +653,12 @@ class ShopState(rx.State):
     @rx.event
     def set_sort(self, sort: str):
         self.sort_by = sort
+        return ShopState.fetch_catalog
 
     @rx.event
     def set_search(self, q: str):
         self.search_query = q
+        return ShopState.fetch_catalog
 
     @rx.event
     def set_price_min(self, v: float):
@@ -581,6 +666,7 @@ class ShopState(rx.State):
             self.price_min = int(v)
         except ValueError:
             self.price_min = 0
+        return ShopState.fetch_catalog
 
     @rx.event
     def set_price_max(self, v: float):
@@ -588,6 +674,7 @@ class ShopState(rx.State):
             self.price_max = int(v)
         except ValueError:
             self.price_max = 500
+        return ShopState.fetch_catalog
 
     @rx.event
     def set_coupon(self, v: str):
@@ -606,6 +693,13 @@ class ShopState(rx.State):
         self.selected_plan_id = plan_id
 
     @rx.event
+    def clear_error(self):
+        self.error_message_en = ""
+        self.error_message_zh = ""
+        if self.list_status == "error":
+            self.list_status = "idle"
+
+    @rx.event
     def reset_filters(self):
         self.machine_type = "traffic"
         self.selected_region = "mo"
@@ -616,6 +710,7 @@ class ShopState(rx.State):
         self.search_query = ""
         self.price_min = 0
         self.price_max = 500
+        return ShopState.fetch_catalog
 
     @rx.event
     async def handle_purchase(self):
