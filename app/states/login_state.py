@@ -67,10 +67,6 @@ class LoginState(rx.State):
 
     @rx.var
     def current_error(self) -> str:
-        from app.states.language_state import LanguageState
-
-        # Access language preference to determine error message
-        # In case language state is imported inside this module
         return (
             self.validation_error_zh
             if self.validation_error_zh != ""
@@ -87,7 +83,6 @@ class LoginState(rx.State):
         email = form_data.get("email", "").strip()
         password = form_data.get("password", "").strip()
 
-        # Front-end / state validation
         if not email:
             self.validation_error_en = "Email is required."
             self.validation_error_zh = "电子邮箱为必填项。"
@@ -136,11 +131,10 @@ class LoginState(rx.State):
             )
             return
 
-        await asyncio.sleep(1.5)  # Simulate API roundtrip latency
+        await asyncio.sleep(1.5)
 
         self.is_submitting = False
 
-        # Simulated authentication logic
         if email == "admin@aiarks.com" and password != "admin123":
             self.validation_error_en = "Incorrect password."
             self.validation_error_zh = "密码错误。"
@@ -151,7 +145,12 @@ class LoginState(rx.State):
                 close_button=True,
             )
         else:
-            # Setup language-specific success toast message
+            username = email.split("@")[0].capitalize()
+            from app.states.session_state import SessionState
+
+            session = await self.get_state(SessionState)
+            session.login_user(email, username)
+
             success_title = (
                 "Welcome Back!"
                 if self.validation_error_en == ""

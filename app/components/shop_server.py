@@ -1,6 +1,8 @@
 import reflex as rx
 from app.states.shop_state import ShopState
 from app.states.language_state import LanguageState
+from app.states.session_state import SessionState
+from app.states.ui_state import UIState
 
 
 _ACTIVE_PILL = "flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-50 border border-indigo-500 text-indigo-700 font-semibold text-sm shadow-xs transition-all cursor-pointer"
@@ -273,9 +275,32 @@ def _order_details_sidebar() -> rx.Component:
     return rx.el.aside(
         rx.el.div(
             rx.el.div(
-                rx.el.h3(
-                    LanguageState.shop_order_details,
-                    class_name="text-slate-900 font-bold text-base",
+                rx.el.div(
+                    rx.el.h3(
+                        LanguageState.shop_order_details,
+                        class_name="text-slate-900 font-bold text-base",
+                    ),
+                    rx.cond(
+                        SessionState.is_logged_in,
+                        rx.cond(
+                            SessionState.is_vip,
+                            rx.el.span(
+                                rx.icon("crown", size=10, class_name="mr-1"),
+                                "VIP",
+                                class_name="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200",
+                            ),
+                            rx.el.span(
+                                rx.cond(
+                                    LanguageState.is_zh,
+                                    "普通用户",
+                                    "Free",
+                                ),
+                                class_name="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200",
+                            ),
+                        ),
+                        rx.fragment(),
+                    ),
+                    class_name="flex items-center gap-2",
                 ),
                 rx.el.button(
                     rx.icon("percent", size=12, class_name="mr-1"),
@@ -564,19 +589,74 @@ def _shop_navbar() -> rx.Component:
                     on_click=LanguageState.toggle_language,
                     class_name="flex items-center px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer",
                 ),
-                rx.el.a(
-                    rx.el.button(
-                        LanguageState.nav_login,
-                        class_name="text-sm text-slate-600 hover:text-indigo-600 px-3 py-1.5 font-medium transition-colors cursor-pointer",
+                rx.cond(
+                    SessionState.is_logged_in,
+                    rx.fragment(
+                        rx.el.a(
+                            rx.el.button(
+                                rx.cond(
+                                    LanguageState.is_zh, "控制台", "Console"
+                                ),
+                                class_name="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-xs hover:shadow-md cursor-pointer",
+                            ),
+                            href="/console",
+                        ),
+                        rx.cond(
+                            SessionState.is_vip,
+                            rx.el.span(
+                                rx.icon("crown", size=12, class_name="mr-1"),
+                                "VIP",
+                                class_name="hidden sm:inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200",
+                            ),
+                            rx.fragment(),
+                        ),
+                        rx.el.div(
+                            rx.el.button(
+                                SessionState.avatar_initial,
+                                class_name="size-8 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200 hover:bg-indigo-100 transition-colors shadow-xs cursor-pointer",
+                            ),
+                            rx.el.div(
+                                rx.el.div(
+                                    rx.el.p(
+                                        SessionState.auth_username,
+                                        class_name="text-sm font-bold text-slate-800",
+                                    ),
+                                    rx.el.p(
+                                        SessionState.auth_email,
+                                        class_name="text-xs text-slate-500 truncate",
+                                    ),
+                                    class_name="px-4 py-3 border-b border-slate-100",
+                                ),
+                                rx.el.button(
+                                    rx.cond(
+                                        LanguageState.is_zh,
+                                        "退出登录",
+                                        "Sign Out",
+                                    ),
+                                    on_click=SessionState.logout_user,
+                                    class_name="w-full text-left text-sm text-rose-600 hover:bg-rose-50 px-4 py-2.5 transition-colors cursor-pointer",
+                                ),
+                                class_name="invisible opacity-0 translate-y-1 group-hover/avatar:visible group-hover/avatar:opacity-100 group-hover/avatar:translate-y-0 absolute right-0 mt-2 w-48 rounded-xl bg-white border border-slate-200 shadow-lg transition-all duration-200 z-50 overflow-hidden",
+                            ),
+                            class_name="group/avatar relative",
+                        ),
                     ),
-                    href="/login",
-                ),
-                rx.el.a(
-                    rx.el.button(
-                        LanguageState.nav_signup,
-                        class_name="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-xs hover:shadow-md cursor-pointer",
+                    rx.fragment(
+                        rx.el.a(
+                            rx.el.button(
+                                LanguageState.nav_login,
+                                class_name="text-sm text-slate-600 hover:text-indigo-600 px-3 py-1.5 font-medium transition-colors cursor-pointer",
+                            ),
+                            href="/login",
+                        ),
+                        rx.el.a(
+                            rx.el.button(
+                                LanguageState.nav_signup,
+                                class_name="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-xs hover:shadow-md cursor-pointer",
+                            ),
+                            href="/register",
+                        ),
                     ),
-                    href="/register",
                 ),
                 class_name="flex items-center gap-2",
             ),

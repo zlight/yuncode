@@ -602,25 +602,32 @@ class ShopState(rx.State):
         self.price_max = 500
 
     @rx.event
-    def handle_purchase(self):
+    async def handle_purchase(self):
         if not self.agree_terms:
-            return rx.toast(
+            yield rx.toast(
                 title="Please agree to the terms",
                 description="You must agree to the AiarksCloud Service Agreement to proceed.",
                 duration=3500,
                 close_button=True,
             )
+            return
         plan = self.selected_plan
         if plan and plan.get("stock", 0) == 0:
-            return rx.toast(
+            yield rx.toast(
                 title="Sold Out",
                 description="This plan is currently unavailable.",
                 duration=3500,
                 close_button=True,
             )
-        return rx.toast(
+            return
+        from app.states.session_state import SessionState
+
+        session = await self.get_state(SessionState)
+        if session.is_logged_in:
+            session.vip_cookie = "true"
+        yield rx.toast(
             title="Order created",
-            description=f"Redirecting to checkout for {plan['name'] if plan else 'plan'}...",
+            description=f"Purchase successful for {plan['name'] if plan else 'plan'}. VIP unlocked!",
             duration=3000,
             close_button=True,
         )

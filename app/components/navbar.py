@@ -2,6 +2,7 @@ import reflex as rx
 from app.states.ui_state import UIState
 from app.states.language_state import LanguageState
 from app.states.shop_state import ShopState
+from app.states.session_state import SessionState
 
 
 def _nav_link_element(
@@ -80,7 +81,6 @@ def _region_dropdown_item(region: rx.Var) -> rx.Component:
 
 def _products_dropdown() -> rx.Component:
     return rx.el.div(
-        # Trigger
         rx.el.a(
             rx.el.span(
                 LanguageState.nav_products,
@@ -94,7 +94,6 @@ def _products_dropdown() -> rx.Component:
             href="#products",
             class_name="flex items-center text-sm px-3 py-2 cursor-pointer",
         ),
-        # Dropdown panel
         rx.el.div(
             rx.el.div(
                 rx.el.div(
@@ -156,7 +155,6 @@ def navbar() -> rx.Component:
                 href="#hero",
                 class_name="flex items-center gap-2",
             ),
-            # Navigation links
             rx.el.nav(
                 _nav_link_element(LanguageState.nav_home, "#hero"),
                 _products_dropdown(),
@@ -167,9 +165,7 @@ def navbar() -> rx.Component:
                 class_name="hidden lg:flex items-center gap-1",
                 aria_label="Main navigation",
             ),
-            # Right actions
             rx.el.div(
-                # Language Switch Button (Desktop)
                 rx.el.button(
                     rx.icon(
                         "languages",
@@ -184,19 +180,112 @@ def navbar() -> rx.Component:
                     class_name="flex items-center px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer",
                     aria_label="Switch language",
                 ),
-                rx.el.a(
-                    rx.el.button(
-                        LanguageState.nav_login,
-                        class_name="hidden sm:inline-block text-sm text-slate-600 hover:text-indigo-600 px-3 py-1.5 font-medium transition-colors cursor-pointer",
+                rx.cond(
+                    SessionState.is_logged_in,
+                    rx.fragment(
+                        rx.el.a(
+                            rx.el.button(
+                                rx.cond(
+                                    LanguageState.is_zh, "控制台", "Console"
+                                ),
+                                class_name="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-xs hover:shadow-md cursor-pointer",
+                            ),
+                            href="/console",
+                        ),
+                        rx.cond(
+                            SessionState.is_vip,
+                            rx.el.span(
+                                rx.icon("crown", size=12, class_name="mr-1"),
+                                "VIP",
+                                class_name="hidden sm:inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200",
+                            ),
+                            rx.fragment(),
+                        ),
+                        rx.el.div(
+                            rx.el.button(
+                                SessionState.avatar_initial,
+                                class_name="size-8 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200 hover:bg-indigo-100 transition-colors shadow-xs cursor-pointer",
+                            ),
+                            rx.el.div(
+                                rx.el.div(
+                                    rx.el.p(
+                                        SessionState.auth_username,
+                                        class_name="text-sm font-bold text-slate-800",
+                                    ),
+                                    rx.el.p(
+                                        SessionState.auth_email,
+                                        class_name="text-xs text-slate-500 truncate",
+                                    ),
+                                    rx.cond(
+                                        SessionState.is_vip,
+                                        rx.el.span(
+                                            rx.icon(
+                                                "crown",
+                                                size=10,
+                                                class_name="mr-1",
+                                            ),
+                                            rx.cond(
+                                                LanguageState.is_zh,
+                                                "VIP 会员",
+                                                "VIP Member",
+                                            ),
+                                            class_name="mt-2 inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 w-fit",
+                                        ),
+                                        rx.el.span(
+                                            rx.icon(
+                                                "user",
+                                                size=10,
+                                                class_name="mr-1",
+                                            ),
+                                            rx.cond(
+                                                LanguageState.is_zh,
+                                                "普通用户",
+                                                "Free User",
+                                            ),
+                                            class_name="mt-2 inline-flex items-center text-[10px] font-bold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 w-fit",
+                                        ),
+                                    ),
+                                    class_name="px-4 py-3 border-b border-slate-100 flex flex-col",
+                                ),
+                                rx.el.a(
+                                    rx.cond(
+                                        LanguageState.is_zh,
+                                        "控制台",
+                                        "Console",
+                                    ),
+                                    href="/console",
+                                    class_name="w-full text-left block text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 px-4 py-2.5 transition-colors cursor-pointer",
+                                ),
+                                rx.el.button(
+                                    rx.cond(
+                                        LanguageState.is_zh,
+                                        "退出登录",
+                                        "Sign Out",
+                                    ),
+                                    on_click=SessionState.logout_user,
+                                    class_name="w-full text-left text-sm text-rose-600 hover:bg-rose-50 px-4 py-2.5 transition-colors cursor-pointer",
+                                ),
+                                class_name="invisible opacity-0 translate-y-1 group-hover/avatar:visible group-hover/avatar:opacity-100 group-hover/avatar:translate-y-0 absolute right-0 mt-2 w-56 rounded-xl bg-white border border-slate-200 shadow-lg transition-all duration-200 z-50 overflow-hidden",
+                            ),
+                            class_name="group/avatar relative",
+                        ),
                     ),
-                    href="/login",
-                ),
-                rx.el.a(
-                    rx.el.button(
-                        LanguageState.nav_signup,
-                        class_name="hidden sm:inline-block text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-xs hover:shadow-md cursor-pointer",
+                    rx.fragment(
+                        rx.el.a(
+                            rx.el.button(
+                                LanguageState.nav_login,
+                                class_name="hidden sm:inline-block text-sm text-slate-600 hover:text-indigo-600 px-3 py-1.5 font-medium transition-colors cursor-pointer",
+                            ),
+                            href="/login",
+                        ),
+                        rx.el.a(
+                            rx.el.button(
+                                LanguageState.nav_signup,
+                                class_name="hidden sm:inline-block text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-xs hover:shadow-md cursor-pointer",
+                            ),
+                            href="/register",
+                        ),
                     ),
-                    href="/register",
                 ),
                 rx.el.button(
                     rx.icon(
@@ -213,7 +302,6 @@ def navbar() -> rx.Component:
             ),
             class_name="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between",
         ),
-        # Mobile menu
         rx.cond(
             UIState.mobile_menu_open,
             rx.el.div(
@@ -228,7 +316,6 @@ def navbar() -> rx.Component:
                     _mobile_link_element(LanguageState.nav_faq, "#faq"),
                     class_name="flex flex-col gap-1 p-4",
                 ),
-                # Language Switch Button (Mobile)
                 rx.el.div(
                     rx.el.button(
                         rx.icon(
@@ -249,24 +336,101 @@ def navbar() -> rx.Component:
                     ),
                     class_name="px-4 pb-2",
                 ),
-                rx.el.div(
-                    rx.el.a(
-                        rx.el.button(
-                            LanguageState.nav_login,
-                            class_name="w-full text-sm text-slate-600 border border-slate-200 hover:bg-slate-50 px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                rx.cond(
+                    SessionState.is_logged_in,
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.div(
+                                SessionState.avatar_initial,
+                                class_name="size-10 rounded-full bg-indigo-50 text-indigo-700 font-bold text-sm flex items-center justify-center border border-indigo-200 shadow-xs",
+                            ),
+                            rx.el.div(
+                                rx.el.p(
+                                    SessionState.auth_username,
+                                    class_name="text-sm font-bold text-slate-800",
+                                ),
+                                rx.el.p(
+                                    SessionState.auth_email,
+                                    class_name="text-xs text-slate-500 truncate",
+                                ),
+                                rx.cond(
+                                    SessionState.is_vip,
+                                    rx.el.span(
+                                        rx.icon(
+                                            "crown",
+                                            size=10,
+                                            class_name="mr-1",
+                                        ),
+                                        rx.cond(
+                                            LanguageState.is_zh,
+                                            "VIP 会员",
+                                            "VIP Member",
+                                        ),
+                                        class_name="mt-1 inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 w-fit",
+                                    ),
+                                    rx.el.span(
+                                        rx.icon(
+                                            "user",
+                                            size=10,
+                                            class_name="mr-1",
+                                        ),
+                                        rx.cond(
+                                            LanguageState.is_zh,
+                                            "普通用户",
+                                            "Free User",
+                                        ),
+                                        class_name="mt-1 inline-flex items-center text-[10px] font-bold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 w-fit",
+                                    ),
+                                ),
+                                class_name="flex flex-col min-w-0",
+                            ),
+                            class_name="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100",
                         ),
-                        href="/login",
-                        class_name="flex-1",
-                    ),
-                    rx.el.a(
-                        rx.el.button(
-                            LanguageState.nav_signup,
-                            class_name="w-full text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                        rx.el.a(
+                            rx.el.button(
+                                rx.cond(
+                                    LanguageState.is_zh,
+                                    "控制台",
+                                    "Console",
+                                ),
+                                class_name="w-full text-center text-sm bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-md font-medium transition-colors cursor-pointer mt-3",
+                            ),
+                            href="/console",
+                            on_click=UIState.close_mobile_menu,
                         ),
-                        href="/register",
-                        class_name="flex-1",
+                        rx.el.button(
+                            rx.cond(
+                                LanguageState.is_zh, "退出登录", "Sign Out"
+                            ),
+                            on_click=[
+                                SessionState.logout_user,
+                                UIState.close_mobile_menu,
+                            ],
+                            class_name="w-full text-center text-sm text-rose-600 hover:bg-rose-50 py-2.5 rounded-md font-medium transition-colors border border-rose-200 mt-2 cursor-pointer",
+                        ),
+                        class_name="p-4 border-t border-slate-100 flex flex-col",
                     ),
-                    class_name="flex items-center gap-2 p-4 border-t border-slate-100",
+                    rx.el.div(
+                        rx.el.a(
+                            rx.el.button(
+                                LanguageState.nav_login,
+                                class_name="w-full text-sm text-slate-600 border border-slate-200 hover:bg-slate-50 px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                            ),
+                            href="/login",
+                            on_click=UIState.close_mobile_menu,
+                            class_name="flex-1",
+                        ),
+                        rx.el.a(
+                            rx.el.button(
+                                LanguageState.nav_signup,
+                                class_name="w-full text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                            ),
+                            href="/register",
+                            on_click=UIState.close_mobile_menu,
+                            class_name="flex-1",
+                        ),
+                        class_name="flex items-center gap-2 p-4 border-t border-slate-100",
+                    ),
                 ),
                 class_name="lg:hidden border-t border-slate-100 bg-white/95 backdrop-blur-xl",
             ),
