@@ -51,7 +51,7 @@ def footer() -> rx.Component:
                             class_name="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 flex items-center justify-center",
                         ),
                         rx.el.span(
-                            "AkileCloud",
+                            "AiarksCloud",
                             class_name="text-white font-semibold text-base",
                         ),
                         class_name="flex items-center gap-2 mb-4",
@@ -61,8 +61,8 @@ def footer() -> rx.Component:
                         class_name="text-sm text-gray-400 mb-6 max-w-xs leading-relaxed",
                     ),
                     rx.el.div(
-                        _contact_row("mail", "support@akilecloud.com"),
-                        _contact_row("send", "@AkileCloud on Telegram"),
+                        _contact_row("mail", "support@aiarkscloud.com"),
+                        _contact_row("send", "@AiarksCloud on Telegram"),
                         rx.el.div(
                             rx.icon(
                                 "map-pin",

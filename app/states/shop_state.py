@@ -582,7 +582,7 @@ class ShopState(rx.State):
         if not self.agree_terms:
             return rx.toast(
                 title="Please agree to the terms",
-                description="You must agree to the AkileCloud Service Agreement to proceed.",
+                description="You must agree to the AiarksCloud Service Agreement to proceed.",
                 duration=3500,
                 close_button=True,
             )

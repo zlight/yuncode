@@ -64,7 +64,7 @@ def navbar() -> rx.Component:
                     class_name="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 flex items-center justify-center",
                 ),
                 rx.el.span(
-                    "AkileCloud",
+                    "AiarksCloud",
                     class_name="text-white font-semibold text-base tracking-tight",
                 ),
                 href="#hero",
@@ -81,9 +81,6 @@ def navbar() -> rx.Component:
                 _nav_link_element(LanguageState.nav_pricing, "#pricing"),
                 _nav_link_element(LanguageState.nav_trust, "#trust"),
                 _nav_link_element(LanguageState.nav_faq, "#faq"),
-                _nav_link_element(
-                    rx.Var.create("ATerminal"), "#", highlight="true"
-                ),
                 class_name="hidden lg:flex items-center gap-1",
                 aria_label="Main navigation",
             ),
@@ -147,9 +144,6 @@ def navbar() -> rx.Component:
                     _mobile_link_element(LanguageState.nav_pricing, "#pricing"),
                     _mobile_link_element(LanguageState.nav_trust, "#trust"),
                     _mobile_link_element(LanguageState.nav_faq, "#faq"),
-                    _mobile_link_element(
-                        rx.Var.create("ATerminal"), "#", highlight="true"
-                    ),
                     class_name="flex flex-col gap-1 p-4",
                 ),
                 # Language Switch Button (Mobile)

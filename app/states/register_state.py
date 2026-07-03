@@ -202,9 +202,9 @@ class RegisterState(rx.State):
             else "注册成功!"
         )
         success_desc = (
-            f"Welcome to AkileCloud, {username}!"
+            f"Welcome to AiarksCloud, {username}!"
             if self.validation_error_en == ""
-            else f"欢迎来到 AkileCloud，{username}！"
+            else f"欢迎来到 AiarksCloud，{username}！"
         )
 
         yield rx.toast(

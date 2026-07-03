@@ -141,7 +141,7 @@ class LoginState(rx.State):
         self.is_submitting = False
 
         # Simulated authentication logic
-        if email == "admin@akile.com" and password != "admin123":
+        if email == "admin@aiarks.com" and password != "admin123":
             self.validation_error_en = "Incorrect password."
             self.validation_error_zh = "密码错误。"
             yield rx.toast(

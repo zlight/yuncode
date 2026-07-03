@@ -517,7 +517,7 @@ def _shop_navbar() -> rx.Component:
                     class_name="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 flex items-center justify-center",
                 ),
                 rx.el.span(
-                    "AkileCloud",
+                    "AiarksCloud",
                     class_name="text-white font-semibold text-base",
                 ),
                 href="/",

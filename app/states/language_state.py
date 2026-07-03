@@ -63,7 +63,7 @@ class LanguageState(rx.State):
 
     @rx.var
     def hero_title_highlight(self) -> str:
-        return "AkileCloud" if self.language == "zh" else "AkileCloud "
+        return "AiarksCloud" if self.language == "zh" else "AiarksCloud "
 
     @rx.var
     def hero_title_suffix(self) -> str:
@@ -906,11 +906,11 @@ class LanguageState(rx.State):
     # ==================== Register Page Translations ====================
     @rx.var
     def register_title(self) -> str:
-        return self._t("Sign up AkileCloud", "注册 AkileCloud")
+        return self._t("Sign up AiarksCloud", "注册 AiarksCloud")
 
     @rx.var
     def register_subtitle(self) -> str:
-        return self._t("Sign up AkileCloud", "注册 AkileCloud")
+        return self._t("Sign up AiarksCloud", "注册 AiarksCloud")
 
     @rx.var
     def register_placeholder_username(self) -> str:
@@ -992,7 +992,7 @@ class LanguageState(rx.State):
                 {
                     "id": "faq-1",
                     "q": "「流媒体解锁」到底意味着什么?",
-                    "a": "每台 AkileCloud VPS 都为其地区配置原生住宅级 IP。这意味着 Netflix、Disney+、HBO Max、TikTok、ChatGPT 与 BBC iPlayer 等服务会将其识别为合法本地用户,并提供完整地区目录——无代理阻断,无地理限制。",
+                    "a": "每台 AiarksCloud VPS 都为其地区配置原生住宅级 IP。这意味着 Netflix、Disney+、HBO Max、TikTok、ChatGPT 与 BBC iPlayer 等服务会将其识别为合法本地用户,并提供完整地区目录——无代理阻断,无地理限制。",
                 },
                 {
                     "id": "faq-2",
@@ -1034,7 +1034,7 @@ class LanguageState(rx.State):
             {
                 "id": "faq-1",
                 "q": "What does 'streaming unlock' actually mean?",
-                "a": "Every AkileCloud VPS ships with a native residential-class IP for its region. This means services like Netflix, Disney+, HBO Max, TikTok, ChatGPT and BBC iPlayer detect the IP as a legitimate local user and serve full regional catalogs — no proxy blocks, no geo restrictions.",
+                "a": "Every AiarksCloud VPS ships with a native residential-class IP for its region. This means services like Netflix, Disney+, HBO Max, TikTok, ChatGPT and BBC iPlayer detect the IP as a legitimate local user and serve full regional catalogs — no proxy blocks, no geo restrictions.",
             },
             {
                 "id": "faq-2",
@@ -1145,8 +1145,8 @@ class LanguageState(rx.State):
     @rx.var
     def cta_desc(self) -> str:
         return self._t(
-            "Join 50,000+ developers and businesses running production workloads on AkileCloud. No credit card required to start.",
-            "加入 50,000+ 开发者与企业,在 AkileCloud 上运行生产工作负载。无需信用卡即可开始。",
+            "Join 50,000+ developers and businesses running production workloads on AiarksCloud. No credit card required to start.",
+            "加入 50,000+ 开发者与企业,在 AiarksCloud 上运行生产工作负载。无需信用卡即可开始。",
         )
 
     @rx.var
@@ -1200,8 +1200,8 @@ class LanguageState(rx.State):
     @rx.var
     def footer_copy(self) -> str:
         return self._t(
-            "© 2025 AkileCloud Technology Ltd. All rights reserved.",
-            "© 2025 AkileCloud Technology Ltd. 版权所有。",
+            "© 2025 AiarksCloud Technology Ltd. All rights reserved.",
+            "© 2025 AiarksCloud Technology Ltd. 版权所有。",
         )
 
     @rx.var
@@ -1423,8 +1423,8 @@ class LanguageState(rx.State):
     @rx.var
     def shop_agree_terms(self) -> str:
         return self._t(
-            "I have read and agree to the AkileCloud Service Agreement",
-            "我已阅读并同意 AkileCloud 服务协议",
+            "I have read and agree to the AiarksCloud Service Agreement",
+            "我已阅读并同意 AiarksCloud 服务协议",
         )
 
     @rx.var
