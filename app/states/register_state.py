@@ -1,5 +1,7 @@
 import reflex as rx
 import asyncio
+import logging
+from app.services import user_store
 
 
 class RegisterState(rx.State):
@@ -193,24 +195,47 @@ class RegisterState(rx.State):
             )
             return
 
-        await asyncio.sleep(1.5)
+        invitation_code = form_data.get("invitation_code", "").strip()
+
+        await asyncio.sleep(0.6)
+
+        try:
+            ok, code, _rec = await user_store.create_user(
+                email=email,
+                username=username,
+                password=password,
+                invitation_code=invitation_code,
+            )
+        except Exception as e:
+            logging.exception(f"Error creating user: {e}")
+            ok, code = False, "error"
+
         self.is_submitting = False
 
-        success_title = (
-            "Registration Successful!"
-            if self.validation_error_en == ""
-            else "注册成功!"
-        )
-        success_desc = (
-            f"Welcome to AiarksCloud, {username}!"
-            if self.validation_error_en == ""
-            else f"欢迎来到 AiarksCloud，{username}！"
-        )
+        if not ok:
+            if code == "email_exists":
+                self.validation_error_en = "This email is already registered."
+                self.validation_error_zh = "该电子邮箱已被注册。"
+            elif code == "username_exists":
+                self.validation_error_en = "This username is already taken."
+                self.validation_error_zh = "该用户名已被使用。"
+            else:
+                self.validation_error_en = (
+                    "Registration failed. Please try again."
+                )
+                self.validation_error_zh = "注册失败，请稍后重试。"
+            yield rx.toast(
+                title="Registration Error / 注册失败",
+                description=self.validation_error_zh,
+                duration=4000,
+                close_button=True,
+            )
+            return
 
         yield rx.toast(
-            title=success_title,
-            description=success_desc,
-            duration=4000,
+            title="Registration Successful! / 注册成功!",
+            description=f"Welcome to AiarksCloud, {username}!",
+            duration=3500,
             close_button=True,
         )
         yield rx.redirect("/login")

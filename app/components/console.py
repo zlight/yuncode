@@ -409,6 +409,65 @@ def _region_option(node: rx.Var) -> rx.Component:
     return rx.el.option(node, value=node)
 
 
+def _no_servers_state() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.icon("server-off", size=32, class_name="text-cyan-300"),
+            class_name="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center mx-auto mb-4",
+        ),
+        rx.el.h3(
+            rx.cond(
+                LanguageState.is_zh,
+                "尚未购买任何服务器",
+                "No servers yet",
+            ),
+            class_name="text-white font-bold text-lg mb-1 text-center",
+        ),
+        rx.el.p(
+            rx.cond(
+                LanguageState.is_zh,
+                "购买您的第一台云服务器,60 秒内即可开通并出现在此列表。",
+                "Purchase your first cloud server — provisioned in under 60 seconds and shown here.",
+            ),
+            class_name="text-sm text-slate-400 mb-5 text-center max-w-md mx-auto font-medium",
+        ),
+        rx.el.a(
+            rx.el.button(
+                rx.icon("plus", size=14, class_name="mr-1"),
+                rx.cond(LanguageState.is_zh, "购买服务器", "Buy Server"),
+                class_name="inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-orange-500/30 transition-all cursor-pointer",
+            ),
+            href="/shop/server",
+            class_name="flex justify-center",
+        ),
+        class_name="rounded-2xl bg-slate-900/40 backdrop-blur-xl border border-dashed border-white/10 px-6 py-16",
+    )
+
+
+def _no_match_state() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.icon("search-x", size=28, class_name="text-slate-500"),
+            class_name="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-3",
+        ),
+        rx.el.h3(
+            rx.cond(
+                LanguageState.is_zh, "没有匹配的服务器", "No matching servers"
+            ),
+            class_name="text-white font-bold text-base text-center mb-1",
+        ),
+        rx.el.p(
+            rx.cond(
+                LanguageState.is_zh,
+                "请调整搜索关键词或地区筛选。",
+                "Try adjusting your search or region filter.",
+            ),
+            class_name="text-sm text-slate-400 text-center font-medium",
+        ),
+        class_name="rounded-2xl bg-slate-900/40 backdrop-blur-xl border border-dashed border-white/10 px-6 py-12",
+    )
+
+
 def _servers_list_view() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -427,59 +486,90 @@ def _servers_list_view() -> rx.Component:
                 ),
                 class_name="flex-1 min-w-0",
             ),
-            rx.el.a(
+            rx.el.div(
                 rx.el.button(
-                    rx.icon("plus", size=14, class_name="mr-1"),
-                    rx.cond(LanguageState.is_zh, "购买服务器", "Buy Server"),
-                    class_name="flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-orange-500/30 transition-all cursor-pointer",
+                    rx.icon("refresh-cw", size=13, class_name="mr-1.5"),
+                    rx.cond(LanguageState.is_zh, "刷新", "Refresh"),
+                    on_click=ServersState.load_console,
+                    class_name="flex items-center px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 text-xs font-semibold transition-all cursor-pointer",
                 ),
-                href="/shop/server",
+                rx.el.a(
+                    rx.el.button(
+                        rx.icon("plus", size=14, class_name="mr-1"),
+                        rx.cond(
+                            LanguageState.is_zh, "购买服务器", "Buy Server"
+                        ),
+                        class_name="flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-orange-500/30 transition-all cursor-pointer",
+                    ),
+                    href="/shop/server",
+                ),
+                class_name="flex items-center gap-2",
             ),
             class_name="flex items-start gap-4 mb-6",
         ),
-        rx.el.div(
+        rx.cond(
+            ServersState.has_instances,
             rx.el.div(
-                rx.icon(
-                    "search",
-                    size=14,
-                    class_name="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none",
-                ),
-                rx.el.input(
-                    placeholder=rx.cond(
-                        LanguageState.is_zh,
-                        "搜索名称、IP、地区...",
-                        "Search name, IP, region...",
+                rx.el.div(
+                    rx.el.div(
+                        rx.icon(
+                            "search",
+                            size=14,
+                            class_name="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none",
+                        ),
+                        rx.el.input(
+                            placeholder=rx.cond(
+                                LanguageState.is_zh,
+                                "搜索名称、IP、地区...",
+                                "Search name, IP, region...",
+                            ),
+                            default_value=ServersState.search_query,
+                            on_change=ServersState.set_search_query.debounce(
+                                300
+                            ),
+                            class_name="w-72 pl-9 pr-4 py-2 bg-slate-900/60 text-white placeholder-slate-500 rounded-lg border border-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 focus:outline-hidden text-xs",
+                        ),
+                        class_name="relative",
                     ),
-                    default_value=ServersState.search_query,
-                    on_change=ServersState.set_search_query.debounce(300),
-                    class_name="w-72 pl-9 pr-4 py-2 bg-slate-900/60 text-white placeholder-slate-500 rounded-lg border border-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 focus:outline-hidden text-xs",
-                ),
-                class_name="relative",
-            ),
-            rx.el.div(
-                rx.el.select(
-                    rx.el.option(
-                        rx.cond(LanguageState.is_zh, "全部地区", "All Regions"),
-                        value="all",
+                    rx.el.div(
+                        rx.el.select(
+                            rx.el.option(
+                                rx.cond(
+                                    LanguageState.is_zh,
+                                    "全部地区",
+                                    "All Regions",
+                                ),
+                                value="all",
+                            ),
+                            rx.foreach(
+                                ServersState.region_options, _region_option
+                            ),
+                            default_value=ServersState.filter_region,
+                            key=ServersState.filter_region,
+                            on_change=ServersState.set_filter_region,
+                            class_name="appearance-none pl-3 pr-9 py-2 bg-slate-900/60 text-white rounded-lg border border-white/10 focus:border-cyan-500/50 focus:outline-hidden text-xs cursor-pointer font-semibold",
+                        ),
+                        rx.icon(
+                            "chevron-down",
+                            size=12,
+                            class_name="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none",
+                        ),
+                        class_name="relative",
                     ),
-                    rx.foreach(ServersState.region_options, _region_option),
-                    default_value=ServersState.filter_region,
-                    key=ServersState.filter_region,
-                    on_change=ServersState.set_filter_region,
-                    class_name="appearance-none pl-3 pr-9 py-2 bg-slate-900/60 text-white rounded-lg border border-white/10 focus:border-cyan-500/50 focus:outline-hidden text-xs cursor-pointer font-semibold",
+                    class_name="flex items-center gap-3 mb-5",
                 ),
-                rx.icon(
-                    "chevron-down",
-                    size=12,
-                    class_name="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none",
+                rx.cond(
+                    ServersState.filtered_instances.length() > 0,
+                    rx.el.div(
+                        rx.foreach(
+                            ServersState.filtered_instances, _instance_card
+                        ),
+                        class_name="flex flex-col gap-4",
+                    ),
+                    _no_match_state(),
                 ),
-                class_name="relative",
             ),
-            class_name="flex items-center gap-3 mb-5",
-        ),
-        rx.el.div(
-            rx.foreach(ServersState.filtered_instances, _instance_card),
-            class_name="flex flex-col gap-4",
+            _no_servers_state(),
         ),
     )
 
@@ -563,6 +653,14 @@ def _action_btn(
 
 def _server_manage_view() -> rx.Component:
     inst = ServersState.selected_instance
+    return rx.cond(
+        ServersState.has_instances,
+        _server_manage_view_body(inst),
+        _no_servers_state(),
+    )
+
+
+def _server_manage_view_body(inst) -> rx.Component:
     return rx.el.div(
         rx.el.button(
             rx.icon("arrow-left", size=14, class_name="mr-1.5"),
@@ -750,33 +848,88 @@ def _overview_content() -> rx.Component:
             _account_stat(
                 "wallet",
                 rx.cond(LanguageState.is_zh, "账户余额", "Balance"),
-                "¥128.50",
+                "¥" + f"{SessionState.balance:.2f}",
                 rx.cond(LanguageState.is_zh, "可用于自动续费", "Available"),
                 "cyan",
             ),
             _account_stat(
                 "coins",
                 rx.cond(LanguageState.is_zh, "AK 币", "AK Coins"),
-                "2,480",
+                SessionState.ak_coins.to_string(),
                 rx.cond(LanguageState.is_zh, "可兑换商品", "Redeemable"),
                 "amber",
             ),
             _account_stat(
                 "trending-up",
                 rx.cond(LanguageState.is_zh, "总消费", "Total Spending"),
-                "¥1,210.00",
-                rx.cond(LanguageState.is_zh, "累计 12 笔订单", "12 orders"),
+                "¥" + f"{SessionState.total_spending:.2f}",
+                rx.cond(
+                    LanguageState.is_zh,
+                    ServersState.instances.length().to_string() + " 台实例",
+                    ServersState.instances.length().to_string() + " instances",
+                ),
                 "indigo",
             ),
             _account_stat(
                 "gift",
                 rx.cond(LanguageState.is_zh, "邀请奖励", "Referral"),
-                "¥86.40",
-                rx.cond(LanguageState.is_zh, "已邀请 4 位好友", "4 referrals"),
+                "¥" + f"{SessionState.referral_earnings:.2f}",
+                rx.cond(
+                    LanguageState.is_zh,
+                    "邀请码 " + SessionState.invitation_code,
+                    "Code " + SessionState.invitation_code,
+                ),
                 "emerald",
             ),
             class_name="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6",
         ),
+    )
+
+
+def _login_prompt() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.icon("lock", size=32, class_name="text-cyan-300"),
+                class_name="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-indigo-500/10",
+            ),
+            rx.el.h1(
+                rx.cond(
+                    LanguageState.is_zh,
+                    "请先登录以访问控制台",
+                    "Log in to access the console",
+                ),
+                class_name="text-2xl font-extrabold text-white text-center tracking-tight mb-2",
+            ),
+            rx.el.p(
+                rx.cond(
+                    LanguageState.is_zh,
+                    "登录后即可查看您的服务器、订单、账单与实时监控数据。",
+                    "Sign in to view your servers, orders, billing and real-time monitoring data.",
+                ),
+                class_name="text-sm text-slate-400 font-medium text-center mb-6 max-w-sm mx-auto",
+            ),
+            rx.el.div(
+                rx.el.a(
+                    rx.el.button(
+                        rx.cond(LanguageState.is_zh, "登录", "Log In"),
+                        rx.icon("arrow-right", size=14, class_name="ml-1.5"),
+                        class_name="flex items-center px-5 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white text-sm font-bold shadow-xl shadow-indigo-500/30 transition-all cursor-pointer",
+                    ),
+                    href="/login",
+                ),
+                rx.el.a(
+                    rx.el.button(
+                        rx.cond(LanguageState.is_zh, "免费注册", "Sign up"),
+                        class_name="px-5 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-100 text-sm font-bold transition-all cursor-pointer",
+                    ),
+                    href="/register",
+                ),
+                class_name="flex items-center justify-center gap-3",
+            ),
+            class_name="w-full max-w-md rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 p-8",
+        ),
+        class_name="flex items-center justify-center min-h-[calc(100vh-6rem)] px-6",
     )
 
 
@@ -794,16 +947,22 @@ def console_page() -> rx.Component:
         rx.el.div(
             class_name="fixed top-[70%] -right-40 w-[600px] h-[600px] rounded-full bg-violet-600/12 blur-[140px] pointer-events-none"
         ),
-        _console_sidebar(),
-        _console_topbar(),
-        rx.el.div(
-            rx.match(
-                ServersState.console_view,
-                ("servers", _servers_list_view()),
-                ("manage", _server_manage_view()),
-                _overview_content(),
+        rx.cond(
+            SessionState.is_logged_in,
+            rx.fragment(
+                _console_sidebar(),
+                _console_topbar(),
+                rx.el.div(
+                    rx.match(
+                        ServersState.console_view,
+                        ("servers", _servers_list_view()),
+                        ("manage", _server_manage_view()),
+                        _overview_content(),
+                    ),
+                    class_name="lg:ml-64 pt-24 pb-12 px-6 max-w-[1600px] mx-auto relative z-10",
+                ),
             ),
-            class_name="lg:ml-64 pt-24 pb-12 px-6 max-w-[1600px] mx-auto relative z-10",
+            rx.el.div(_login_prompt(), class_name="pt-24 relative z-10"),
         ),
         class_name="font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased",
     )

@@ -1,5 +1,7 @@
 import reflex as rx
+import logging
 from typing import TypedDict
+from app.services import user_store
 
 
 class ServerInstance(TypedDict):
@@ -73,86 +75,15 @@ class RecentEvent(TypedDict):
 
 class ServersState(rx.State):
     console_view: str = "overview"
-    selected_instance_id: str = "hks1-20260701204720ff9b5c"
+    selected_instance_id: str = ""
     filter_region: str = "all"
     search_query: str = ""
     manage_tab: str = "dashboard"
     monitor_range: str = "24h"
+    is_authenticated: bool = False
+    is_loaded: bool = False
 
-    instances: list[ServerInstance] = [
-        {
-            "id": "hks1-20260701204720ff9b5c",
-            "name": "hks1-20260701204720ff9b5c",
-            "status": "running",
-            "ip": "103.28.201.42",
-            "region": "中国香港",
-            "region_flag": "🇭🇰",
-            "node": "HKS",
-            "plan": "HKS-Standard",
-            "cpu": "1核",
-            "ram": "1024M",
-            "disk": "10GB",
-            "bandwidth": "1200M",
-            "traffic_used": "377.06MB",
-            "traffic_total": "1500G/月",
-            "traffic_percent": 3,
-            "reset_price": "¥20.00",
-            "price": "¥42.49/月",
-            "expires": "2026-08-01 20:48:15",
-            "auto_renew": True,
-            "health": "healthy",
-            "os": "Debian 12",
-            "created": "2025-07-01 20:47:20",
-        },
-        {
-            "id": "jps1-20250815103012aa2b1c",
-            "name": "jps1-20250815103012aa2b1c",
-            "status": "running",
-            "ip": "45.32.108.221",
-            "region": "日本东京",
-            "region_flag": "🇯🇵",
-            "node": "JPS",
-            "plan": "JPS-Pro",
-            "cpu": "2核",
-            "ram": "4096M",
-            "disk": "60GB",
-            "bandwidth": "2000M",
-            "traffic_used": "1.2GB",
-            "traffic_total": "5000G/月",
-            "traffic_percent": 12,
-            "reset_price": "¥50.00",
-            "price": "¥69.99/月",
-            "expires": "2025-11-02 10:30:12",
-            "auto_renew": False,
-            "health": "healthy",
-            "os": "Ubuntu 22.04",
-            "created": "2025-08-15 10:30:12",
-        },
-        {
-            "id": "uss1-20250620145533bc9e3f",
-            "name": "uss1-20250620145533bc9e3f",
-            "status": "running",
-            "ip": "199.180.55.14",
-            "region": "美国洛杉矶",
-            "region_flag": "🇺🇸",
-            "node": "USS",
-            "plan": "USS-Business",
-            "cpu": "4核",
-            "ram": "8192M",
-            "disk": "160GB",
-            "bandwidth": "10000M",
-            "traffic_used": "845MB",
-            "traffic_total": "20000G/月",
-            "traffic_percent": 1,
-            "reset_price": "¥60.00",
-            "price": "¥89.99/月",
-            "expires": "2026-03-01 14:55:33",
-            "auto_renew": True,
-            "health": "healthy",
-            "os": "Debian 11",
-            "created": "2025-06-20 14:55:33",
-        },
-    ]
+    instances: list[ServerInstance] = []
 
     firewall_rules: list[FirewallRule] = [
         {
@@ -287,56 +218,7 @@ class ServersState(rx.State):
         },
     ]
 
-    billing_records: list[BillingRecord] = [
-        {
-            "id": "#AC-20250912",
-            "date": "2025-09-12",
-            "item": "HKS-Standard · 续费",
-            "cycle": "1 个月",
-            "amount": "¥42.49",
-            "status": "paid",
-        },
-        {
-            "id": "#AC-20250812",
-            "date": "2025-08-12",
-            "item": "HKS-Standard · 续费",
-            "cycle": "1 个月",
-            "amount": "¥42.49",
-            "status": "paid",
-        },
-        {
-            "id": "#AC-20250712",
-            "date": "2025-07-12",
-            "item": "HKS-Standard · 开通",
-            "cycle": "1 个月",
-            "amount": "¥42.49",
-            "status": "paid",
-        },
-        {
-            "id": "#AC-20250625",
-            "date": "2025-06-25",
-            "item": "流量包 · 500GB",
-            "cycle": "一次性",
-            "amount": "¥20.00",
-            "status": "paid",
-        },
-        {
-            "id": "#AC-20250601",
-            "date": "2025-06-01",
-            "item": "快照存储",
-            "cycle": "1 个月",
-            "amount": "¥5.00",
-            "status": "paid",
-        },
-        {
-            "id": "#AC-20250510",
-            "date": "2025-05-10",
-            "item": "带宽升级",
-            "cycle": "一次性",
-            "amount": "¥15.00",
-            "status": "refunded",
-        },
-    ]
+    billing_records: list[BillingRecord] = []
 
     monitor_data: list[MonitorPoint] = [
         {
@@ -487,6 +369,10 @@ class ServersState(rx.State):
         self.manage_tab = "dashboard"
 
     @rx.event
+    async def refresh_instances(self):
+        yield ServersState.load_console
+
+    @rx.event
     def back_to_list(self):
         self.console_view = "servers"
 
@@ -507,13 +393,131 @@ class ServersState(rx.State):
         self.search_query = q
 
     @rx.event
-    def toggle_auto_renew(self, instance_id: str):
+    async def toggle_auto_renew(self, instance_id: str):
+        from app.states.session_state import SessionState
+
+        session = await self.get_state(SessionState)
+        email = (session.auth_email or "").strip().lower()
+        new_value = False
+        target = None
         for i, inst in enumerate(self.instances):
             if inst["id"] == instance_id:
-                self.instances[i]["auto_renew"] = not self.instances[i][
-                    "auto_renew"
-                ]
+                new_value = not bool(inst["auto_renew"])
+                self.instances[i]["auto_renew"] = new_value
+                target = instance_id
                 break
+        if target and email:
+            try:
+                await user_store.update_instance(
+                    email, target, {"auto_renew": new_value}
+                )
+            except Exception as e:
+                logging.exception(f"Error persisting auto_renew: {e}")
+
+    @rx.event
+    async def load_console(self):
+        from app.states.session_state import SessionState
+
+        session = await self.get_state(SessionState)
+        email = (session.auth_email or "").strip().lower()
+        logged_in = session.is_logged_in_cookie == "true"
+
+        self.is_loaded = True
+
+        if not email or not logged_in:
+            self.is_authenticated = False
+            self.instances = []
+            self.billing_records = []
+            self.selected_instance_id = ""
+            yield rx.toast(
+                title="Login required / 请先登录",
+                description="Please log in to access the console. / 请登录后访问控制台。",
+                duration=3500,
+                close_button=True,
+            )
+            yield rx.redirect("/login")
+            return
+
+        self.is_authenticated = True
+
+        try:
+            raw_instances = await user_store.get_user_instances(email)
+        except Exception as e:
+            logging.exception(f"Error loading user instances: {e}")
+            raw_instances = []
+
+        try:
+            raw_orders = await user_store.get_user_orders(email)
+        except Exception as e:
+            logging.exception(f"Error loading user orders: {e}")
+            raw_orders = []
+
+        normalized: list[ServerInstance] = []
+        for inst in raw_instances:
+            created_val = inst.get("created") or inst.get("created_at") or "-"
+            normalized.append(
+                {
+                    "id": str(inst.get("id", "")),
+                    "name": str(inst.get("name", "")),
+                    "status": str(inst.get("status", "running")),
+                    "ip": str(inst.get("ip", "-")),
+                    "region": str(inst.get("region", "-")),
+                    "region_flag": str(inst.get("region_flag", "🌐")),
+                    "node": str(inst.get("node", "-")),
+                    "plan": str(inst.get("plan", "-")),
+                    "cpu": str(inst.get("cpu", "-")),
+                    "ram": str(inst.get("ram", "-")),
+                    "disk": str(inst.get("disk", "-")),
+                    "bandwidth": str(inst.get("bandwidth", "-")),
+                    "traffic_used": str(inst.get("traffic_used", "0 MB")),
+                    "traffic_total": str(inst.get("traffic_total", "-")),
+                    "traffic_percent": int(inst.get("traffic_percent", 0) or 0),
+                    "reset_price": str(inst.get("reset_price", "-")),
+                    "price": str(inst.get("price", "-")),
+                    "expires": str(inst.get("expires", "-")),
+                    "auto_renew": bool(inst.get("auto_renew", True)),
+                    "health": str(inst.get("health", "healthy")),
+                    "os": str(inst.get("os", "-")),
+                    "created": str(created_val),
+                }
+            )
+        self.instances = normalized
+
+        bills: list[BillingRecord] = []
+        for order in raw_orders:
+            created_at = str(order.get("created_at", ""))
+            if "T" in created_at:
+                date_part = created_at.split("T")[0]
+            else:
+                date_part = created_at[:10] if created_at else "-"
+            plan_name = str(order.get("plan_name", "-"))
+            currency = str(order.get("currency", "CNY"))
+            symbol = "¥" if currency.upper() == "CNY" else "$"
+            try:
+                amount_val = float(order.get("amount", 0))
+            except (TypeError, ValueError):
+                amount_val = 0.0
+            bills.append(
+                {
+                    "id": "#" + str(order.get("id", "")),
+                    "date": date_part,
+                    "item": f"{plan_name} · 开通",
+                    "cycle": str(order.get("cycle", "-")),
+                    "amount": f"{symbol}{amount_val:.2f}",
+                    "status": str(order.get("status", "paid")),
+                }
+            )
+        bills.reverse()
+        self.billing_records = bills
+
+        if self.instances:
+            valid_ids = [i["id"] for i in self.instances]
+            if self.selected_instance_id not in valid_ids:
+                self.selected_instance_id = self.instances[0]["id"]
+        else:
+            self.selected_instance_id = ""
+            if self.console_view == "manage":
+                self.console_view = "servers"
 
     @rx.event
     def toggle_firewall_rule(self, rule_id: str):
@@ -557,4 +561,33 @@ class ServersState(rx.State):
         for i in self.instances:
             if i["id"] == self.selected_instance_id:
                 return i
-        return self.instances[0]
+        if self.instances:
+            return self.instances[0]
+        return {
+            "id": "",
+            "name": "-",
+            "status": "-",
+            "ip": "-",
+            "region": "-",
+            "region_flag": "🌐",
+            "node": "-",
+            "plan": "-",
+            "cpu": "-",
+            "ram": "-",
+            "disk": "-",
+            "bandwidth": "-",
+            "traffic_used": "-",
+            "traffic_total": "-",
+            "traffic_percent": 0,
+            "reset_price": "-",
+            "price": "-",
+            "expires": "-",
+            "auto_renew": False,
+            "health": "-",
+            "os": "-",
+            "created": "-",
+        }
+
+    @rx.var
+    def has_instances(self) -> bool:
+        return len(self.instances) > 0

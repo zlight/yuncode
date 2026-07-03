@@ -1,5 +1,7 @@
 import reflex as rx
 import asyncio
+import logging
+from app.services import user_store
 
 
 class LoginState(rx.State):
@@ -131,40 +133,52 @@ class LoginState(rx.State):
             )
             return
 
-        await asyncio.sleep(1.5)
+        await asyncio.sleep(0.6)
+
+        try:
+            ok, code, rec = await user_store.verify_password(email, password)
+        except Exception as e:
+            logging.exception(f"Error verifying password: {e}")
+            ok, code, rec = False, "error", None
 
         self.is_submitting = False
 
-        if email == "admin@aiarks.com" and password != "admin123":
-            self.validation_error_en = "Incorrect password."
-            self.validation_error_zh = "密码错误。"
+        if not ok:
+            if code == "not_found":
+                self.validation_error_en = (
+                    "Account not found. Please register first."
+                )
+                self.validation_error_zh = "账户不存在，请先注册。"
+            elif code == "wrong_password":
+                self.validation_error_en = "Incorrect password."
+                self.validation_error_zh = "密码错误。"
+            else:
+                self.validation_error_en = (
+                    "Authentication failed. Please try again."
+                )
+                self.validation_error_zh = "认证失败，请稍后重试。"
             yield rx.toast(
                 title="Authentication Failed / 认证失败",
                 description=self.validation_error_zh,
                 duration=4000,
                 close_button=True,
             )
-        else:
-            username = email.split("@")[0].capitalize()
-            from app.states.session_state import SessionState
+            return
 
-            session = await self.get_state(SessionState)
-            session.login_user(email, username)
+        username = (
+            rec.get("username", email.split("@")[0].capitalize())
+            if rec
+            else email.split("@")[0].capitalize()
+        )
+        from app.states.session_state import SessionState
 
-            success_title = (
-                "Welcome Back!"
-                if self.validation_error_en == ""
-                else "欢迎回来!"
-            )
-            success_desc = (
-                f"Successfully authenticated as {email}"
-                if self.validation_error_en == ""
-                else f"成功以 {email} 身份登录"
-            )
-            yield rx.toast(
-                title=success_title,
-                description=success_desc,
-                duration=4000,
-                close_button=True,
-            )
-            yield rx.redirect("/")
+        session = await self.get_state(SessionState)
+        await session.login_user(email, username)
+
+        yield rx.toast(
+            title="Welcome Back! / 欢迎回来!",
+            description=f"Successfully authenticated as {email}",
+            duration=3500,
+            close_button=True,
+        )
+        yield rx.redirect("/")
