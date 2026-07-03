@@ -11,6 +11,7 @@ from app.components.footer import footer
 from app.components.login_view import login_page
 from app.components.register_view import register_page
 from app.components.shop_server import shop_server_page
+from app.states.shop_state import ShopState
 
 
 def _grid_bg() -> rx.Component:
@@ -53,4 +54,6 @@ app = rx.App(
 app.add_page(index, route="/")
 app.add_page(login_page, route="/login")
 app.add_page(register_page, route="/register")
-app.add_page(shop_server_page, route="/shop/server")
+app.add_page(
+    shop_server_page, route="/shop/server", on_load=ShopState.load_from_query
+)

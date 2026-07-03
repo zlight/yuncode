@@ -1,6 +1,7 @@
 import reflex as rx
 from app.states.ui_state import UIState
 from app.states.language_state import LanguageState
+from app.states.shop_state import ShopState
 
 
 def _nav_link_element(
@@ -55,6 +56,91 @@ def _mobile_link_element(
     )
 
 
+def _region_dropdown_item(region: rx.Var) -> rx.Component:
+    name = rx.cond(LanguageState.is_zh, region["name_zh"], region["name_en"])
+    return rx.el.a(
+        rx.el.span(region["flag"], class_name="text-lg"),
+        rx.el.div(
+            rx.el.p(name, class_name="text-sm text-white font-medium"),
+            rx.el.p(
+                region["id"].to(str).upper() + "BGP",
+                class_name="text-[10px] text-gray-500 tracking-wider",
+            ),
+            class_name="flex flex-col",
+        ),
+        rx.icon(
+            "arrow-up-right",
+            size=12,
+            class_name="ml-auto text-gray-500 group-hover/item:text-blue-400 transition-colors",
+        ),
+        href=f"/shop/server?region={region['id']}",
+        class_name="group/item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.06] border border-transparent hover:border-white/10 transition-all",
+    )
+
+
+def _products_dropdown() -> rx.Component:
+    return rx.el.div(
+        # Trigger
+        rx.el.a(
+            rx.el.span(
+                LanguageState.nav_products,
+                class_name="text-gray-300 group-hover/products:text-white transition-colors font-medium",
+            ),
+            rx.icon(
+                "chevron-down",
+                size=14,
+                class_name="ml-1 text-gray-500 group-hover/products:text-white group-hover/products:rotate-180 transition-all",
+            ),
+            href="#products",
+            class_name="flex items-center text-sm px-3 py-2",
+        ),
+        # Dropdown panel
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.p(
+                        rx.cond(
+                            LanguageState.is_zh,
+                            "全球地区节点",
+                            "Global Regions",
+                        ),
+                        class_name="text-xs font-semibold text-blue-400 uppercase tracking-wider",
+                    ),
+                    rx.el.p(
+                        rx.cond(
+                            LanguageState.is_zh,
+                            "选择您需要的地区，一键跳转购买",
+                            "Choose a region to get started",
+                        ),
+                        class_name="text-[11px] text-gray-500 mt-0.5",
+                    ),
+                    class_name="px-3 pb-3 mb-2 border-b border-white/5",
+                ),
+                rx.el.div(
+                    rx.foreach(ShopState.regions_data, _region_dropdown_item),
+                    class_name="grid grid-cols-2 gap-1",
+                ),
+                rx.el.div(
+                    rx.el.a(
+                        rx.icon("layout-grid", size=12, class_name="mr-1.5"),
+                        rx.cond(
+                            LanguageState.is_zh,
+                            "查看全部产品",
+                            "View all products",
+                        ),
+                        rx.icon("arrow-right", size=12, class_name="ml-auto"),
+                        href="/shop/server",
+                        class_name="mt-3 pt-3 border-t border-white/5 flex items-center px-3 py-2 rounded-lg text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/5 font-medium transition-all",
+                    ),
+                ),
+                class_name="p-3",
+            ),
+            class_name="invisible opacity-0 translate-y-1 group-hover/products:visible group-hover/products:opacity-100 group-hover/products:translate-y-0 absolute top-full left-1/2 -translate-x-1/2 mt-1 w-[420px] rounded-xl bg-[#0f131c]/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-blue-500/10 transition-all duration-200 z-50",
+        ),
+        class_name="group/products relative",
+    )
+
+
 def navbar() -> rx.Component:
     return rx.el.header(
         rx.el.div(
@@ -73,10 +159,7 @@ def navbar() -> rx.Component:
             # Navigation links mapped to localized values from state
             rx.el.nav(
                 _nav_link_element(LanguageState.nav_home, "#hero"),
-                _nav_link_element(LanguageState.nav_products, "#products"),
-                _nav_link_element(
-                    LanguageState.nav_light_server, "#products", badge="New"
-                ),
+                _products_dropdown(),
                 _nav_link_element(LanguageState.nav_network, "#nodes"),
                 _nav_link_element(LanguageState.nav_pricing, "#pricing"),
                 _nav_link_element(LanguageState.nav_trust, "#trust"),
@@ -136,9 +219,6 @@ def navbar() -> rx.Component:
                     _mobile_link_element(LanguageState.nav_home, "#hero"),
                     _mobile_link_element(
                         LanguageState.nav_products, "#products"
-                    ),
-                    _mobile_link_element(
-                        LanguageState.nav_light_server, "#products", badge="New"
                     ),
                     _mobile_link_element(LanguageState.nav_network, "#nodes"),
                     _mobile_link_element(LanguageState.nav_pricing, "#pricing"),

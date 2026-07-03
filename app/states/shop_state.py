@@ -500,6 +500,30 @@ class ShopState(rx.State):
     ]
 
     @rx.event
+    def apply_region_from_nav(self, region: str):
+        valid_ids = [r["id"] for r in self.regions_data]
+        if region not in valid_ids:
+            return
+        self.selected_region = region
+        nodes = []
+        for p in self.all_plans:
+            if p["region"] == region and p["node"] not in nodes:
+                nodes.append(p["node"])
+        if nodes:
+            self.selected_node = nodes[0]
+        for p in self.all_plans:
+            if p["region"] == region and p["node"] == self.selected_node:
+                self.selected_plan_id = p["id"]
+                break
+
+    @rx.event
+    def load_from_query(self):
+        region = self.router.url.query_parameters.get("region", "")
+        if not region:
+            return
+        self.apply_region_from_nav(region)
+
+    @rx.event
     def set_machine_type(self, mt: str):
         self.machine_type = mt
 
