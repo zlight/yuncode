@@ -2,7 +2,7 @@ import reflex as rx
 
 
 class LanguageState(rx.State):
-    language: str = "en"  # "en" or "zh"
+    language: str = "zh"  # "en" or "zh"
 
     @rx.event
     def toggle_language(self):
