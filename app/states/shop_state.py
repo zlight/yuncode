@@ -603,6 +603,20 @@ class ShopState(rx.State):
 
     @rx.event
     async def handle_purchase(self):
+        from app.states.session_state import SessionState
+
+        session = await self.get_state(SessionState)
+
+        if not session.is_logged_in:
+            yield rx.toast(
+                title="Login required / 请先登录",
+                description="Please log in to purchase and unlock VIP. / 请登录后购买以解锁 VIP。",
+                duration=3500,
+                close_button=True,
+            )
+            yield rx.redirect("/login")
+            return
+
         if not self.agree_terms:
             yield rx.toast(
                 title="Please agree to the terms",
@@ -611,8 +625,18 @@ class ShopState(rx.State):
                 close_button=True,
             )
             return
+
         plan = self.selected_plan
-        if plan and plan.get("stock", 0) == 0:
+        if plan is None:
+            yield rx.toast(
+                title="No plan selected",
+                description="Please select a valid plan before purchasing.",
+                duration=3500,
+                close_button=True,
+            )
+            return
+
+        if plan.get("stock", 0) <= 0:
             yield rx.toast(
                 title="Sold Out",
                 description="This plan is currently unavailable.",
@@ -620,15 +644,13 @@ class ShopState(rx.State):
                 close_button=True,
             )
             return
-        from app.states.session_state import SessionState
 
-        session = await self.get_state(SessionState)
-        if session.is_logged_in:
-            session.vip_cookie = "true"
+        yield SessionState.upgrade_to_vip
+
         yield rx.toast(
-            title="Order created",
-            description=f"Purchase successful for {plan['name'] if plan else 'plan'}. VIP unlocked!",
-            duration=3000,
+            title="Order created · VIP unlocked",
+            description=f"Purchase successful for {plan['name']}. Your account is now VIP.",
+            duration=3500,
             close_button=True,
         )
 

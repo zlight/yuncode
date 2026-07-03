@@ -7,31 +7,31 @@ def _step_card(step: rx.Var) -> rx.Component:
         rx.el.div(
             rx.el.span(
                 step["num"],
-                class_name="text-xs font-bold text-indigo-600",
+                class_name="text-xs font-bold text-cyan-300",
             ),
-            class_name="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center mb-4",
+            class_name="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-4",
         ),
         rx.el.div(
-            rx.icon(step["icon"], size=18, class_name="text-slate-700"),
-            class_name="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-xs",
+            rx.icon(step["icon"], size=18, class_name="text-white"),
+            class_name="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center mb-4",
         ),
         rx.el.h3(
             step["title"],
-            class_name="text-slate-900 text-base font-bold mb-2",
+            class_name="text-white text-base font-bold mb-2",
         ),
         rx.el.p(
             step["desc"],
-            class_name="text-sm text-slate-500 leading-relaxed font-medium",
+            class_name="text-sm text-slate-400 leading-relaxed font-medium",
         ),
-        class_name="relative rounded-2xl bg-white border border-slate-200/80 p-6 shadow-xs hover:border-indigo-500 hover:-translate-y-0.5 transition-all",
+        class_name="relative rounded-2xl bg-slate-900/50 backdrop-blur-xl border border-white/5 p-6 hover:border-cyan-500/30 hover:-translate-y-0.5 transition-all",
     )
 
 
 def _data_stat(icon: str, value: str, label: rx.Var) -> rx.Component:
     return rx.el.div(
         rx.el.div(
-            rx.icon(icon, size=16, class_name="text-white"),
-            class_name="w-9 h-9 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center",
+            rx.icon(icon, size=16, class_name="text-cyan-300"),
+            class_name="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center",
         ),
         rx.el.div(
             rx.el.p(
@@ -53,25 +53,25 @@ def workflow_section() -> rx.Component:
             "num": "01",
             "icon": "mouse-pointer-click",
             "title": "Choose region & plan",
-            "desc": "Pick from 12+ regions and 20+ plans. Filter by bandwidth, stock and price to match your workload.",
+            "desc": "Pick from 12+ regions and 20+ plans. Filter by bandwidth, stock and price.",
         },
         {
             "num": "02",
             "icon": "credit-card",
             "title": "Secure checkout",
-            "desc": "Pay with card, PayPal, Alipay, WeChat Pay or USDT. All transactions encrypted end-to-end.",
+            "desc": "Pay with card, PayPal, Alipay, WeChat Pay or USDT. Encrypted end-to-end.",
         },
         {
             "num": "03",
             "icon": "rocket",
             "title": "Auto provisioning",
-            "desc": "Server boots and native IP is assigned in under 60 seconds. Credentials delivered instantly.",
+            "desc": "Server boots and native IP assigned in under 60 seconds. Instant credentials.",
         },
         {
             "num": "04",
             "icon": "line-chart",
             "title": "Monitor & scale",
-            "desc": "Real-time dashboards, one-click resize, snapshots and 24/7 engineer support keep you online.",
+            "desc": "Real-time dashboards, one-click resize, snapshots and 24/7 support.",
         },
     ]
     steps_zh = [
@@ -79,7 +79,7 @@ def workflow_section() -> rx.Component:
             "num": "01",
             "icon": "mouse-pointer-click",
             "title": "选择地区与方案",
-            "desc": "12+ 地区,20+ 方案。按带宽、库存和价格筛选,匹配您的工作负载。",
+            "desc": "12+ 地区,20+ 方案。按带宽、库存和价格筛选,匹配业务需求。",
         },
         {
             "num": "02",
@@ -97,7 +97,7 @@ def workflow_section() -> rx.Component:
             "num": "04",
             "icon": "line-chart",
             "title": "监控与扩容",
-            "desc": "实时仪表盘、一键升配、快照备份与 7×24 工程师支持,业务稳定在线。",
+            "desc": "实时仪表盘、一键升配、快照备份与 7×24 工程师支持。",
         },
     ]
 
@@ -105,14 +105,14 @@ def workflow_section() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.div(
-                    rx.icon("workflow", size=14, class_name="text-indigo-600"),
+                    rx.icon("workflow", size=14, class_name="text-cyan-300"),
                     rx.el.span(
                         rx.cond(
                             LanguageState.is_zh, "服务流程", "How it works"
                         ),
-                        class_name="text-xs text-indigo-600 font-bold tracking-wide uppercase",
+                        class_name="text-xs text-cyan-300 font-bold tracking-wider uppercase",
                     ),
-                    class_name="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 mb-4",
+                    class_name="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 mb-4",
                 ),
                 rx.el.h2(
                     rx.cond(
@@ -124,9 +124,9 @@ def workflow_section() -> rx.Component:
                         rx.cond(
                             LanguageState.is_zh, "四步搞定", "in four steps"
                         ),
-                        class_name="bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent",
+                        class_name="bg-gradient-to-r from-indigo-300 via-cyan-300 to-white bg-clip-text text-transparent",
                     ),
-                    class_name="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-3",
+                    class_name="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-3",
                 ),
                 rx.el.p(
                     rx.cond(
@@ -134,7 +134,7 @@ def workflow_section() -> rx.Component:
                         "无需咨询,无需等待,几分钟内即可获得一台可用于生产的云服务器。",
                         "No sales calls, no waiting. Production-ready cloud servers in minutes.",
                     ),
-                    class_name="text-slate-500 max-w-2xl mx-auto font-medium",
+                    class_name="text-slate-400 max-w-2xl mx-auto font-medium",
                 ),
                 class_name="text-center mb-14",
             ),
@@ -145,10 +145,12 @@ def workflow_section() -> rx.Component:
                 ),
                 class_name="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16",
             ),
-            # Data band
             rx.el.div(
                 rx.el.div(
                     class_name="absolute inset-0 bg-[radial-gradient(ellipse_60%_120%_at_20%_50%,rgba(255,255,255,0.15),transparent)] pointer-events-none",
+                ),
+                rx.el.div(
+                    class_name="absolute inset-0 rounded-3xl bg-gradient-to-r from-indigo-600/40 via-indigo-500/30 to-cyan-500/40 blur-2xl -z-10",
                 ),
                 rx.el.div(
                     _data_stat(
@@ -191,10 +193,10 @@ def workflow_section() -> rx.Component:
                     ),
                     class_name="relative grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 px-8 py-8",
                 ),
-                class_name="relative rounded-3xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-cyan-500 overflow-hidden shadow-lg",
+                class_name="relative rounded-3xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 overflow-hidden shadow-2xl shadow-indigo-500/30 border border-white/10",
             ),
-            class_name="max-w-7xl mx-auto px-6",
+            class_name="max-w-7xl mx-auto px-6 relative z-10",
         ),
         id="workflow",
-        class_name="relative py-24 bg-slate-50/50 border-b border-slate-100",
+        class_name="relative py-24",
     )
