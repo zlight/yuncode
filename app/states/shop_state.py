@@ -560,14 +560,14 @@ class ShopState(rx.State):
         self.search_query = q
 
     @rx.event
-    def set_price_min(self, v: str):
+    def set_price_min(self, v: float):
         try:
             self.price_min = int(v)
         except ValueError:
             self.price_min = 0
 
     @rx.event
-    def set_price_max(self, v: str):
+    def set_price_max(self, v: float):
         try:
             self.price_max = int(v)
         except ValueError:
