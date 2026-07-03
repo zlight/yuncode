@@ -3,6 +3,8 @@ from app.components.navbar import navbar
 from app.components.hero import hero
 from app.components.products import products_section
 from app.components.nodes import nodes_section
+from app.components.workflow import workflow_section
+from app.components.capability_matrix import capability_matrix_section
 from app.components.pricing import pricing_section
 from app.components.metrics import metrics_section
 from app.components.faq import faq_section
@@ -16,7 +18,7 @@ from app.states.shop_state import ShopState
 
 def _grid_bg() -> rx.Component:
     return rx.el.div(
-        class_name="fixed inset-0 pointer-events-none opacity-[0.15] [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_30%,black_40%,transparent_100%)]",
+        class_name="fixed inset-0 pointer-events-none opacity-100 [background-image:linear-gradient(to_right,rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.03)_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_70%,transparent_100%)]",
     )
 
 
@@ -27,12 +29,14 @@ def index() -> rx.Component:
         hero(),
         products_section(),
         nodes_section(),
+        workflow_section(),
+        capability_matrix_section(),
         pricing_section(),
         metrics_section(),
         faq_section(),
         cta_section(),
         footer(),
-        class_name="font-['Inter'] bg-[#0a0d14] min-h-screen relative overflow-x-hidden text-white antialiased scroll-smooth",
+        class_name="font-['Inter'] bg-[#f8fafc] min-h-screen relative overflow-x-hidden text-slate-800 antialiased scroll-smooth",
     )
 
 

@@ -6,7 +6,7 @@ def _footer_link(item) -> rx.Component:
     return rx.el.a(
         item["label"],
         href=item["href"],
-        class_name="block text-sm text-gray-400 hover:text-white transition-colors py-1",
+        class_name="block text-sm text-slate-500 hover:text-indigo-600 transition-colors py-1.5 font-medium",
     )
 
 
@@ -14,7 +14,7 @@ def _footer_col(title, items) -> rx.Component:
     return rx.el.div(
         rx.el.h4(
             title,
-            class_name="text-white text-xs font-semibold mb-4 uppercase tracking-wider",
+            class_name="text-slate-900 text-xs font-bold mb-4 uppercase tracking-wider",
         ),
         rx.el.div(
             rx.foreach(items, _footer_link),
@@ -28,14 +28,14 @@ def _social_link(icon: str, label: str) -> rx.Component:
         rx.icon(icon, size=16),
         href="#",
         aria_label=label,
-        class_name="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/20 transition-all",
+        class_name="w-9 h-9 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer",
     )
 
 
 def _contact_row(icon: str, text: str) -> rx.Component:
     return rx.el.div(
-        rx.icon(icon, size=14, class_name="text-blue-400 shrink-0"),
-        rx.el.span(text, class_name="text-sm text-gray-400"),
+        rx.icon(icon, size=14, class_name="text-indigo-600 shrink-0"),
+        rx.el.span(text, class_name="text-sm text-slate-500 font-medium"),
         class_name="flex items-center gap-2",
     )
 
@@ -47,18 +47,20 @@ def footer() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.el.div(
-                            rx.icon("box", size=18, class_name="text-blue-400"),
-                            class_name="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 flex items-center justify-center",
+                            rx.icon(
+                                "box", size=18, class_name="text-indigo-600"
+                            ),
+                            class_name="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center",
                         ),
                         rx.el.span(
                             "AiarksCloud",
-                            class_name="text-white font-semibold text-base",
+                            class_name="text-slate-900 font-bold text-base",
                         ),
                         class_name="flex items-center gap-2 mb-4",
                     ),
                     rx.el.p(
                         LanguageState.footer_desc,
-                        class_name="text-sm text-gray-400 mb-6 max-w-xs leading-relaxed",
+                        class_name="text-sm text-slate-500 mb-6 max-w-xs leading-relaxed font-medium",
                     ),
                     rx.el.div(
                         _contact_row("mail", "support@aiarkscloud.com"),
@@ -67,11 +69,11 @@ def footer() -> rx.Component:
                             rx.icon(
                                 "map-pin",
                                 size=14,
-                                class_name="text-blue-400 shrink-0",
+                                class_name="text-indigo-600 shrink-0",
                             ),
                             rx.el.span(
                                 LanguageState.footer_addr,
-                                class_name="text-sm text-gray-400",
+                                class_name="text-sm text-slate-500 font-medium",
                             ),
                             class_name="flex items-center gap-2",
                         ),
@@ -103,18 +105,18 @@ def footer() -> rx.Component:
                     LanguageState.footer_col_company,
                     LanguageState.footer_company_links,
                 ),
-                class_name="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 pb-10 border-b border-white/5",
+                class_name="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 pb-10 border-b border-slate-200",
             ),
             rx.el.div(
                 rx.el.div(
                     rx.el.div(
                         rx.el.div(
                             rx.el.span(
-                                class_name="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"
+                                class_name="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"
                             ),
                             rx.el.span(
                                 LanguageState.footer_all_operational,
-                                class_name="text-xs text-gray-300 font-medium",
+                                class_name="text-xs text-slate-600 font-bold",
                             ),
                             class_name="flex items-center gap-2",
                         ),
@@ -124,73 +126,73 @@ def footer() -> rx.Component:
                                 "arrow-up-right", size=12, class_name="ml-1"
                             ),
                             href="#",
-                            class_name="flex items-center text-xs text-blue-400 hover:text-blue-300",
+                            class_name="flex items-center text-xs text-indigo-600 hover:text-indigo-700 font-bold",
                         ),
                         class_name="flex items-center gap-4",
                     ),
                     rx.el.div(
                         rx.el.span(
                             LanguageState.footer_payments_accepted,
-                            class_name="text-xs text-gray-500",
+                            class_name="text-xs text-slate-400 font-semibold",
                         ),
                         rx.el.div(
                             rx.el.span(
                                 "Visa",
-                                class_name="text-[10px] text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10",
+                                class_name="text-[10px] text-slate-600 font-semibold px-2 py-0.5 rounded bg-slate-50 border border-slate-200",
                             ),
                             rx.el.span(
                                 "Mastercard",
-                                class_name="text-[10px] text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10",
+                                class_name="text-[10px] text-slate-600 font-semibold px-2 py-0.5 rounded bg-slate-50 border border-slate-200",
                             ),
                             rx.el.span(
                                 "PayPal",
-                                class_name="text-[10px] text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10",
+                                class_name="text-[10px] text-slate-600 font-semibold px-2 py-0.5 rounded bg-slate-50 border border-slate-200",
                             ),
                             rx.el.span(
                                 "Alipay",
-                                class_name="text-[10px] text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10",
+                                class_name="text-[10px] text-slate-600 font-semibold px-2 py-0.5 rounded bg-slate-50 border border-slate-200",
                             ),
                             rx.el.span(
                                 "USDT",
-                                class_name="text-[10px] text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10",
+                                class_name="text-[10px] text-slate-600 font-semibold px-2 py-0.5 rounded bg-slate-50 border border-slate-200",
                             ),
                             class_name="flex flex-wrap items-center gap-1.5",
                         ),
                         class_name="flex items-center gap-2",
                     ),
-                    class_name="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 py-6 border-b border-white/5",
+                    class_name="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 py-6 border-b border-slate-200",
                 ),
                 rx.el.div(
                     rx.el.div(
                         rx.el.p(
                             LanguageState.footer_copy,
-                            class_name="text-xs text-gray-500",
+                            class_name="text-xs text-slate-400 font-semibold",
                         ),
                         rx.el.div(
                             rx.el.a(
                                 LanguageState.footer_legal_privacy,
                                 href="#",
-                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                                class_name="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-semibold",
                             ),
                             rx.el.a(
                                 LanguageState.footer_legal_terms,
                                 href="#",
-                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                                class_name="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-semibold",
                             ),
                             rx.el.a(
                                 "SLA",
                                 href="#",
-                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                                class_name="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-semibold",
                             ),
                             rx.el.a(
                                 LanguageState.footer_legal_cookies,
                                 href="#",
-                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                                class_name="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-semibold",
                             ),
                             rx.el.a(
                                 LanguageState.footer_legal_aup,
                                 href="#",
-                                class_name="text-xs text-gray-500 hover:text-white transition-colors",
+                                class_name="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-semibold",
                             ),
                             class_name="flex flex-wrap items-center gap-6",
                         ),
@@ -201,5 +203,5 @@ def footer() -> rx.Component:
             class_name="max-w-7xl mx-auto px-6",
         ),
         id="footer",
-        class_name="relative py-16 border-t border-white/5",
+        class_name="relative py-16 bg-white border-t border-slate-200/60",
     )

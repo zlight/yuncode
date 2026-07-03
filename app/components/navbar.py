@@ -12,15 +12,15 @@ def _nav_link_element(
             label,
             class_name=rx.cond(
                 highlight == "true",
-                "text-yellow-400 font-medium",
-                "text-gray-300 hover:text-white transition-colors font-medium",
+                "text-indigo-600 font-semibold",
+                "text-slate-600 hover:text-indigo-600 transition-colors font-medium",
             ),
         ),
         rx.cond(
             badge != "",
             rx.el.span(
                 badge,
-                class_name="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 font-semibold",
+                class_name="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-semibold",
             ),
             rx.fragment(),
         ),
@@ -37,22 +37,22 @@ def _mobile_link_element(
             label,
             class_name=rx.cond(
                 highlight == "true",
-                "text-yellow-400 font-medium text-base",
-                "text-gray-200 font-medium text-base",
+                "text-indigo-600 font-semibold text-base",
+                "text-slate-800 font-medium text-base",
             ),
         ),
         rx.cond(
             badge != "",
             rx.el.span(
                 badge,
-                class_name="ml-2 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 font-semibold",
+                class_name="ml-2 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-semibold",
             ),
             rx.fragment(),
         ),
-        rx.icon("chevron-right", size=16, class_name="ml-auto text-gray-500"),
+        rx.icon("chevron-right", size=16, class_name="ml-auto text-slate-400"),
         href=href,
         on_click=UIState.close_mobile_menu,
-        class_name="flex items-center px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors",
+        class_name="flex items-center px-4 py-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors",
     )
 
 
@@ -61,20 +61,20 @@ def _region_dropdown_item(region: rx.Var) -> rx.Component:
     return rx.el.a(
         rx.el.span(region["flag"], class_name="text-lg"),
         rx.el.div(
-            rx.el.p(name, class_name="text-sm text-white font-medium"),
+            rx.el.p(name, class_name="text-sm text-slate-800 font-medium"),
             rx.el.p(
                 region["id"].to(str).upper() + "BGP",
-                class_name="text-[10px] text-gray-500 tracking-wider",
+                class_name="text-[10px] text-slate-400 tracking-wider",
             ),
             class_name="flex flex-col",
         ),
         rx.icon(
             "arrow-up-right",
             size=12,
-            class_name="ml-auto text-gray-500 group-hover/item:text-blue-400 transition-colors",
+            class_name="ml-auto text-slate-300 group-hover/item:text-indigo-600 transition-colors",
         ),
         href=f"/shop/server?region={region['id']}",
-        class_name="group/item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.06] border border-transparent hover:border-white/10 transition-all",
+        class_name="group/item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all",
     )
 
 
@@ -84,15 +84,15 @@ def _products_dropdown() -> rx.Component:
         rx.el.a(
             rx.el.span(
                 LanguageState.nav_products,
-                class_name="text-gray-300 group-hover/products:text-white transition-colors font-medium",
+                class_name="text-slate-600 group-hover/products:text-indigo-600 transition-colors font-medium",
             ),
             rx.icon(
                 "chevron-down",
                 size=14,
-                class_name="ml-1 text-gray-500 group-hover/products:text-white group-hover/products:rotate-180 transition-all",
+                class_name="ml-1 text-slate-400 group-hover/products:text-indigo-600 group-hover/products:rotate-180 transition-all",
             ),
             href="#products",
-            class_name="flex items-center text-sm px-3 py-2",
+            class_name="flex items-center text-sm px-3 py-2 cursor-pointer",
         ),
         # Dropdown panel
         rx.el.div(
@@ -104,7 +104,7 @@ def _products_dropdown() -> rx.Component:
                             "全球地区节点",
                             "Global Regions",
                         ),
-                        class_name="text-xs font-semibold text-blue-400 uppercase tracking-wider",
+                        class_name="text-xs font-semibold text-indigo-600 uppercase tracking-wider",
                     ),
                     rx.el.p(
                         rx.cond(
@@ -112,9 +112,9 @@ def _products_dropdown() -> rx.Component:
                             "选择您需要的地区，一键跳转购买",
                             "Choose a region to get started",
                         ),
-                        class_name="text-[11px] text-gray-500 mt-0.5",
+                        class_name="text-[11px] text-slate-400 mt-0.5",
                     ),
-                    class_name="px-3 pb-3 mb-2 border-b border-white/5",
+                    class_name="px-3 pb-3 mb-2 border-b border-slate-100",
                 ),
                 rx.el.div(
                     rx.foreach(ShopState.regions_data, _region_dropdown_item),
@@ -130,12 +130,12 @@ def _products_dropdown() -> rx.Component:
                         ),
                         rx.icon("arrow-right", size=12, class_name="ml-auto"),
                         href="/shop/server",
-                        class_name="mt-3 pt-3 border-t border-white/5 flex items-center px-3 py-2 rounded-lg text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/5 font-medium transition-all",
+                        class_name="mt-3 pt-3 border-t border-slate-100 flex items-center px-3 py-2 rounded-lg text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/50 font-medium transition-all",
                     ),
                 ),
                 class_name="p-3",
             ),
-            class_name="invisible opacity-0 translate-y-1 group-hover/products:visible group-hover/products:opacity-100 group-hover/products:translate-y-0 absolute top-full left-1/2 -translate-x-1/2 mt-1 w-[420px] rounded-xl bg-[#0f131c]/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-blue-500/10 transition-all duration-200 z-50",
+            class_name="invisible opacity-0 translate-y-1 group-hover/products:visible group-hover/products:opacity-100 group-hover/products:translate-y-0 absolute top-full left-1/2 -translate-x-1/2 mt-1 w-[420px] rounded-xl bg-white border border-slate-200/80 shadow-lg transition-all duration-200 z-50",
         ),
         class_name="group/products relative",
     )
@@ -146,17 +146,17 @@ def navbar() -> rx.Component:
         rx.el.div(
             rx.el.a(
                 rx.el.div(
-                    rx.icon("box", size=18, class_name="text-blue-400"),
-                    class_name="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 flex items-center justify-center",
+                    rx.icon("box", size=18, class_name="text-indigo-600"),
+                    class_name="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center",
                 ),
                 rx.el.span(
                     "AiarksCloud",
-                    class_name="text-white font-semibold text-base tracking-tight",
+                    class_name="text-slate-900 font-bold text-base tracking-tight",
                 ),
                 href="#hero",
                 class_name="flex items-center gap-2",
             ),
-            # Navigation links mapped to localized values from state
+            # Navigation links
             rx.el.nav(
                 _nav_link_element(LanguageState.nav_home, "#hero"),
                 _products_dropdown(),
@@ -172,27 +172,29 @@ def navbar() -> rx.Component:
                 # Language Switch Button (Desktop)
                 rx.el.button(
                     rx.icon(
-                        "languages", size=16, class_name="text-blue-400 mr-1.5"
+                        "languages",
+                        size=16,
+                        class_name="text-indigo-600 mr-1.5",
                     ),
                     rx.el.span(
                         LanguageState.lang_toggle_label,
-                        class_name="text-xs text-gray-300 font-semibold",
+                        class_name="text-xs text-slate-600 font-semibold",
                     ),
                     on_click=LanguageState.toggle_language,
-                    class_name="flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
+                    class_name="flex items-center px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer",
                     aria_label="Switch language",
                 ),
                 rx.el.a(
                     rx.el.button(
                         LanguageState.nav_login,
-                        class_name="hidden sm:inline-block text-sm text-gray-300 hover:text-white px-3 py-1.5 font-medium transition-colors cursor-pointer",
+                        class_name="hidden sm:inline-block text-sm text-slate-600 hover:text-indigo-600 px-3 py-1.5 font-medium transition-colors cursor-pointer",
                     ),
                     href="/login",
                 ),
                 rx.el.a(
                     rx.el.button(
                         LanguageState.nav_signup,
-                        class_name="hidden sm:inline-block text-sm bg-blue-500 hover:bg-blue-400 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-lg shadow-blue-500/20 cursor-pointer",
+                        class_name="hidden sm:inline-block text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-md font-medium transition-colors shadow-xs hover:shadow-md cursor-pointer",
                     ),
                     href="/register",
                 ),
@@ -200,10 +202,10 @@ def navbar() -> rx.Component:
                     rx.icon(
                         rx.cond(UIState.mobile_menu_open, "x", "menu"),
                         size=20,
-                        class_name="text-white",
+                        class_name="text-slate-700",
                     ),
                     on_click=UIState.toggle_mobile_menu,
-                    class_name="lg:hidden p-2 rounded-md hover:bg-white/5 transition-colors cursor-pointer",
+                    class_name="lg:hidden p-2 rounded-md hover:bg-slate-100 transition-colors cursor-pointer",
                     aria_label="Toggle menu",
                     aria_expanded=UIState.mobile_menu_open.to_string(),
                 ),
@@ -232,7 +234,7 @@ def navbar() -> rx.Component:
                         rx.icon(
                             "languages",
                             size=16,
-                            class_name="text-blue-400 mr-2",
+                            class_name="text-indigo-600 mr-2",
                         ),
                         rx.cond(
                             LanguageState.is_zh,
@@ -243,7 +245,7 @@ def navbar() -> rx.Component:
                             LanguageState.toggle_language,
                             UIState.close_mobile_menu,
                         ],
-                        class_name="w-full flex items-center justify-center py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-300 hover:text-white transition-all cursor-pointer",
+                        class_name="w-full flex items-center justify-center py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-600 hover:text-slate-800 transition-all cursor-pointer",
                     ),
                     class_name="px-4 pb-2",
                 ),
@@ -251,7 +253,7 @@ def navbar() -> rx.Component:
                     rx.el.a(
                         rx.el.button(
                             LanguageState.nav_login,
-                            class_name="w-full text-sm text-gray-300 border border-white/10 hover:border-white/20 px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                            class_name="w-full text-sm text-slate-600 border border-slate-200 hover:bg-slate-50 px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
                         ),
                         href="/login",
                         class_name="flex-1",
@@ -259,16 +261,16 @@ def navbar() -> rx.Component:
                     rx.el.a(
                         rx.el.button(
                             LanguageState.nav_signup,
-                            class_name="w-full text-sm bg-blue-500 hover:bg-blue-400 text-white px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
+                            class_name="w-full text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-md font-medium transition-colors cursor-pointer",
                         ),
                         href="/register",
                         class_name="flex-1",
                     ),
-                    class_name="flex items-center gap-2 p-4 border-t border-white/5",
+                    class_name="flex items-center gap-2 p-4 border-t border-slate-100",
                 ),
-                class_name="lg:hidden border-t border-white/5 bg-[#0a0d14]/95 backdrop-blur-xl",
+                class_name="lg:hidden border-t border-slate-100 bg-white/95 backdrop-blur-xl",
             ),
             rx.fragment(),
         ),
-        class_name="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[#0a0d14]/70 border-b border-white/5",
+        class_name="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/85 border-b border-slate-200/60",
     )
