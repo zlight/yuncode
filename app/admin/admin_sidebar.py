@@ -61,9 +61,15 @@ def admin_sidebar() -> rx.Component:
                     rx.el.div(
                         _sidebar_btn(
                             "layout-dashboard",
-                            "控制台概览",
+                            "控制台概览 / 运营数据",
                             "Console Overview",
                             "overview",
+                        ),
+                        _sidebar_btn(
+                            "server",
+                            "云服务器管理",
+                            "Server Management",
+                            "servers",
                         ),
                         _sidebar_btn(
                             "users", "用户管理", "User Management", "users"

@@ -1,7 +1,12 @@
 import reflex as rx
 from app.admin.admin_sidebar import admin_sidebar
 from app.admin.admin_navbar import admin_header
-from app.admin.admin_views import overview_view, users_view, settings_view
+from app.admin.admin_views import (
+    overview_view,
+    users_view,
+    settings_view,
+    servers_view,
+)
 from app.admin.admin_state import AdminState
 
 
@@ -14,6 +19,7 @@ def admin_dashboard_layout() -> rx.Component:
                 rx.match(
                     AdminState.current_tab,
                     ("overview", overview_view()),
+                    ("servers", servers_view()),
                     ("users", users_view()),
                     ("settings", settings_view()),
                     overview_view(),
