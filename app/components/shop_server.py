@@ -2,6 +2,8 @@ import reflex as rx
 from app.states.shop_state import ShopState
 from app.states.language_state import LanguageState
 from app.states.session_state import SessionState
+from app.states.theme_state import ThemeState
+from app.components.ui_styles import theme_toggle, theme_navbar_class
 
 
 _ACTIVE_PILL = "flex items-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/50 text-cyan-200 font-semibold text-sm shadow-lg shadow-cyan-500/10 transition-all cursor-pointer"
@@ -765,15 +767,28 @@ def _shop_navbar() -> rx.Component:
                     rx.icon(
                         "languages",
                         size=16,
-                        class_name="text-cyan-300 mr-1.5",
+                        class_name=rx.cond(
+                            ThemeState.is_dark,
+                            "text-slate-200 mr-1.5",
+                            "text-neutral-800 mr-1.5",
+                        ),
                     ),
                     rx.el.span(
                         LanguageState.lang_toggle_label,
-                        class_name="text-xs text-slate-200 font-semibold",
+                        class_name=rx.cond(
+                            ThemeState.is_dark,
+                            "text-xs text-slate-200 font-semibold",
+                            "text-xs text-neutral-800 font-semibold",
+                        ),
                     ),
                     on_click=LanguageState.toggle_language,
-                    class_name="flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
+                    class_name=rx.cond(
+                        ThemeState.is_dark,
+                        "flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
+                        "flex items-center px-3 py-1.5 rounded-lg bg-neutral-100 border border-neutral-200 hover:bg-neutral-200 transition-all cursor-pointer",
+                    ),
                 ),
+                theme_toggle(),
                 rx.cond(
                     SessionState.is_logged_in,
                     rx.fragment(
@@ -847,23 +862,29 @@ def _shop_navbar() -> rx.Component:
             ),
             class_name="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between",
         ),
-        class_name="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-950/70 border-b border-white/5",
+        class_name=theme_navbar_class(),
     )
 
 
 def shop_server_page() -> rx.Component:
     return rx.el.main(
-        rx.el.div(
-            class_name="fixed inset-0 pointer-events-none [background-image:linear-gradient(to_right,rgba(99,102,241,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.06)_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black_50%,transparent_100%)]",
-        ),
-        rx.el.div(
-            class_name="fixed -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-indigo-600/20 blur-[160px] pointer-events-none",
-        ),
-        rx.el.div(
-            class_name="fixed top-[40%] -left-40 w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[140px] pointer-events-none",
-        ),
-        rx.el.div(
-            class_name="fixed top-[70%] -right-40 w-[600px] h-[600px] rounded-full bg-violet-600/15 blur-[140px] pointer-events-none",
+        rx.cond(
+            ThemeState.is_dark,
+            rx.fragment(
+                rx.el.div(
+                    class_name="fixed inset-0 pointer-events-none [background-image:linear-gradient(to_right,rgba(99,102,241,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.06)_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black_50%,transparent_100%)]",
+                ),
+                rx.el.div(
+                    class_name="fixed -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-indigo-600/20 blur-[160px] pointer-events-none",
+                ),
+                rx.el.div(
+                    class_name="fixed top-[40%] -left-40 w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[140px] pointer-events-none",
+                ),
+                rx.el.div(
+                    class_name="fixed top-[70%] -right-40 w-[600px] h-[600px] rounded-full bg-violet-600/15 blur-[140px] pointer-events-none",
+                ),
+            ),
+            rx.fragment(),
         ),
         _shop_navbar(),
         rx.el.div(
@@ -1010,5 +1031,9 @@ def shop_server_page() -> rx.Component:
             ),
             class_name="max-w-[1400px] mx-auto px-6 pt-24 pb-16 relative z-10",
         ),
-        class_name="font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased",
+        class_name=rx.cond(
+            ThemeState.is_dark,
+            "font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased",
+            "font-['Inter'] bg-white min-h-screen relative overflow-x-hidden text-neutral-900 antialiased",
+        ),
     )

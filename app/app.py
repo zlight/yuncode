@@ -12,6 +12,7 @@ from app.components.shop_server import shop_server_page
 from app.components.console import console_page
 from app.states.shop_state import ShopState
 from app.states.servers_state import ServersState
+from app.states.theme_state import ThemeState
 
 
 def _ambient_bg() -> rx.Component:
@@ -177,7 +178,7 @@ def _pricing_teaser() -> rx.Component:
 
 def index() -> rx.Component:
     return rx.el.main(
-        _ambient_bg(),
+        rx.cond(ThemeState.is_dark, _ambient_bg(), rx.fragment()),
         navbar(),
         hero(),
         products_section(),
@@ -186,7 +187,11 @@ def index() -> rx.Component:
         faq_section(),
         cta_section(),
         footer(),
-        class_name="font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased",
+        class_name=rx.cond(
+            ThemeState.is_dark,
+            "font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased",
+            "font-['Inter'] bg-white min-h-screen relative overflow-x-hidden text-neutral-900 antialiased",
+        ),
     )
 
 

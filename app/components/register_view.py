@@ -1,6 +1,8 @@
 import reflex as rx
 from app.states.language_state import LanguageState
 from app.states.register_state import RegisterState
+from app.states.theme_state import ThemeState
+from app.components.ui_styles import theme_toggle, theme_navbar_class
 
 
 def _auth_navbar() -> rx.Component:
@@ -18,22 +20,38 @@ def _auth_navbar() -> rx.Component:
                 href="/",
                 class_name="flex items-center gap-2",
             ),
-            rx.el.button(
-                rx.icon(
-                    "languages",
-                    size=16,
-                    class_name="text-cyan-300 mr-1.5",
+            rx.el.div(
+                rx.el.button(
+                    rx.icon(
+                        "languages",
+                        size=16,
+                        class_name=rx.cond(
+                            ThemeState.is_dark,
+                            "text-slate-200 mr-1.5",
+                            "text-neutral-800 mr-1.5",
+                        ),
+                    ),
+                    rx.el.span(
+                        LanguageState.lang_toggle_label,
+                        class_name=rx.cond(
+                            ThemeState.is_dark,
+                            "text-xs text-slate-200 font-semibold",
+                            "text-xs text-neutral-800 font-semibold",
+                        ),
+                    ),
+                    on_click=LanguageState.toggle_language,
+                    class_name=rx.cond(
+                        ThemeState.is_dark,
+                        "flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
+                        "flex items-center px-3 py-1.5 rounded-lg bg-neutral-100 border border-neutral-200 hover:bg-neutral-200 transition-all cursor-pointer",
+                    ),
                 ),
-                rx.el.span(
-                    LanguageState.lang_toggle_label,
-                    class_name="text-xs text-slate-200 font-semibold",
-                ),
-                on_click=LanguageState.toggle_language,
-                class_name="flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
+                theme_toggle(),
+                class_name="flex items-center gap-2",
             ),
             class_name="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between",
         ),
-        class_name="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-950/70 border-b border-white/5",
+        class_name=theme_navbar_class(),
     )
 
 
@@ -70,7 +88,7 @@ def _ambient_bg() -> rx.Component:
 
 def register_page() -> rx.Component:
     return rx.el.div(
-        _ambient_bg(),
+        rx.cond(ThemeState.is_dark, _ambient_bg(), rx.fragment()),
         _auth_navbar(),
         rx.el.div(
             rx.el.div(
@@ -273,5 +291,9 @@ def register_page() -> rx.Component:
             ),
             class_name="py-6 bg-transparent relative z-10",
         ),
-        class_name="font-['Inter'] bg-[#04060f] min-h-screen flex flex-col relative overflow-hidden text-slate-100 antialiased",
+        class_name=rx.cond(
+            ThemeState.is_dark,
+            "font-['Inter'] bg-[#04060f] min-h-screen flex flex-col relative overflow-hidden text-slate-100 antialiased",
+            "font-['Inter'] bg-white min-h-screen flex flex-col relative overflow-hidden text-neutral-900 antialiased",
+        ),
     )

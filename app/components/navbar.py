@@ -3,6 +3,8 @@ from app.states.ui_state import UIState
 from app.states.language_state import LanguageState
 from app.states.shop_state import ShopState
 from app.states.session_state import SessionState
+from app.states.theme_state import ThemeState
+from app.components.ui_styles import theme_toggle, theme_navbar_class
 
 
 def _nav_link(label: rx.Var, href: str) -> rx.Component:
@@ -183,15 +185,30 @@ def navbar() -> rx.Component:
             rx.el.div(
                 rx.el.button(
                     rx.icon(
-                        "languages", size=16, class_name="text-cyan-300 mr-1.5"
+                        "languages",
+                        size=16,
+                        class_name=rx.cond(
+                            ThemeState.is_dark,
+                            "text-slate-200 mr-1.5",
+                            "text-neutral-800 mr-1.5",
+                        ),
                     ),
                     rx.el.span(
                         LanguageState.lang_toggle_label,
-                        class_name="text-xs text-slate-200 font-semibold",
+                        class_name=rx.cond(
+                            ThemeState.is_dark,
+                            "text-xs text-slate-200 font-semibold",
+                            "text-xs text-neutral-800 font-semibold",
+                        ),
                     ),
                     on_click=LanguageState.toggle_language,
-                    class_name="flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
+                    class_name=rx.cond(
+                        ThemeState.is_dark,
+                        "flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
+                        "flex items-center px-3 py-1.5 rounded-lg bg-neutral-100 border border-neutral-200 hover:bg-neutral-200 transition-all cursor-pointer",
+                    ),
                 ),
+                theme_toggle(),
                 rx.cond(
                     SessionState.is_logged_in,
                     rx.fragment(
@@ -308,5 +325,5 @@ def navbar() -> rx.Component:
             ),
             rx.fragment(),
         ),
-        class_name="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-950/70 border-b border-white/5",
+        class_name=theme_navbar_class(),
     )

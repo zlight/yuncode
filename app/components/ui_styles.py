@@ -1,5 +1,43 @@
 import reflex as rx
 from app.states.language_state import LanguageState
+from app.states.theme_state import ThemeState
+
+
+def theme_toggle() -> rx.Component:
+    """Reusable theme toggle button (dark <-> light)."""
+    return rx.el.button(
+        rx.icon(
+            rx.cond(ThemeState.is_dark, "sun", "moon"),
+            size=16,
+            class_name=rx.cond(
+                ThemeState.is_dark, "text-slate-200", "text-neutral-800"
+            ),
+        ),
+        on_click=ThemeState.toggle_theme,
+        title="Toggle theme",
+        class_name=rx.cond(
+            ThemeState.is_dark,
+            "flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
+            "flex items-center justify-center w-9 h-9 rounded-lg bg-neutral-100 border border-neutral-200 hover:bg-neutral-200 transition-all cursor-pointer",
+        ),
+    )
+
+
+def theme_root_class() -> rx.Var:
+    """Root container class that switches between dark and light themes."""
+    return rx.cond(
+        ThemeState.is_dark,
+        "font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased",
+        "font-['Inter'] bg-white min-h-screen relative overflow-x-hidden text-neutral-900 antialiased",
+    )
+
+
+def theme_navbar_class() -> rx.Var:
+    return rx.cond(
+        ThemeState.is_dark,
+        "fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-950/70 border-b border-white/5",
+        "fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/85 border-b border-neutral-200",
+    )
 
 
 def style_bg() -> rx.Component:
@@ -116,10 +154,10 @@ def style_container(
 ) -> rx.Component:
     """Uniform viewport wrapper with uniform padding and style backbone."""
     return rx.el.div(
-        style_bg(),
+        rx.cond(ThemeState.is_dark, style_bg(), rx.fragment()),
         rx.el.div(
             *children,
             class_name="max-w-7xl mx-auto px-6 pt-24 pb-16 relative z-10",
         ),
-        class_name="font-['Inter'] bg-[#04060f] min-h-screen relative overflow-x-hidden text-slate-100 antialiased",
+        class_name=theme_root_class(),
     )
