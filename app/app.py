@@ -221,7 +221,7 @@ app.add_page(
 app.add_page(console_page, route="/console", on_load=ServersState.load_console)
 from app.components.style_demo_view import style_demo_page
 from app.components.api_spec_view import api_spec_page
-from app.components.admin_layout import admin_dashboard_layout
+from app.admin.admin_layout import admin_dashboard_layout
 
 app.add_page(style_demo_page, route="/style-guide")
 app.add_page(api_spec_page, route="/api-spec")

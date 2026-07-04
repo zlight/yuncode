@@ -1,5 +1,5 @@
 import reflex as rx
-from app.states.admin_state import AdminState
+from app.admin.admin_state import AdminState
 from app.states.language_state import LanguageState
 
 
