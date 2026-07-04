@@ -1,3 +1,14 @@
+import shutil
+from pathlib import Path
+
+# Clean up stale persisted lockfile directory to resolve sync conflicts with package.json
+_lock_dir = Path(__file__).resolve().parent.parent / "reflex.lock"
+if _lock_dir.exists():
+    try:
+        shutil.rmtree(_lock_dir)
+    except Exception:
+        logging.exception("Unexpected error")
+
 import reflex as rx
 from app.components.navbar import navbar
 from app.components.hero import hero
@@ -222,6 +233,7 @@ app.add_page(console_page, route="/console", on_load=ServersState.load_console)
 from app.components.style_demo_view import style_demo_page
 from app.components.api_spec_view import api_spec_page
 from app.admin.admin_layout import admin_dashboard_layout
+import logging
 
 app.add_page(style_demo_page, route="/style-guide")
 app.add_page(api_spec_page, route="/api-spec")
