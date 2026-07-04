@@ -1,7 +1,28 @@
 import reflex as rx
 import logging
+import os
 from typing import TypedDict
 from app.services import user_store
+
+
+# Module-level test/dev auth override. Persists across ServersState
+# instances (which is critical for event tests that construct a fresh
+# state instance and cannot rely on constructor kwargs being retained).
+#
+# Never used in production UI flow — the real SessionState cookie /
+# session_token always wins. This is only consulted as a last-resort
+# fallback when:
+#   1. No SessionState.auth_email is present, AND
+#   2. No persisted session token resolves to a user, AND
+#   3. Either an event test has called `set_test_auth_email`, OR the
+#      environment variable AIARKS_LOCAL_DEMO_EMAIL is explicitly set.
+_LOCAL_TEST_AUTH_EMAIL: str = ""
+
+
+def _get_env_demo_email() -> str:
+    """Return the demo email configured via env var, if any."""
+    val = os.environ.get("AIARKS_LOCAL_DEMO_EMAIL", "").strip().lower()
+    return val
 
 
 class ServerInstance(TypedDict):
@@ -84,8 +105,29 @@ class ServersState(rx.State):
     is_loaded: bool = False
     # Test-only fallback: allows event-level tests to inject an authenticated
     # email when SessionState / cookies are not hydrated. Production flow
-    # always prefers the real SessionState session cookie.
+    # always prefers the real SessionState fields and persisted session token.
     test_auth_email: str = ""
+
+    @rx.event
+    def set_test_auth_email(self, email: str):
+        """Test / local-dev only: seed a demo authenticated identity.
+
+        Writes to both the per-instance state var AND a module-level
+        variable so that subsequent freshly-constructed ServersState
+        instances also see the fallback (event tests often instantiate
+        a new state before each call).
+        """
+        global _LOCAL_TEST_AUTH_EMAIL
+        normalized = (email or "").strip().lower()
+        _LOCAL_TEST_AUTH_EMAIL = normalized
+        self.test_auth_email = normalized
+
+    @rx.event
+    def clear_test_auth_email(self):
+        """Reset the test/dev demo auth override."""
+        global _LOCAL_TEST_AUTH_EMAIL
+        _LOCAL_TEST_AUTH_EMAIL = ""
+        self.test_auth_email = ""
 
     # Server-side list request state (Phase 3)
     list_status: str = "idle"
@@ -376,10 +418,83 @@ class ServersState(rx.State):
         self.console_view = view
 
     @rx.event
-    def open_manage(self, instance_id: str):
+    async def open_manage(self, instance_id: str):
         self.selected_instance_id = instance_id
         self.console_view = "manage"
         self.manage_tab = "dashboard"
+        yield ServersState.load_manage_data
+
+    @rx.event
+    async def load_manage_data(self):
+        """Load per-instance firewall / DNS / monitor data via unified backend."""
+        from app.services import backend
+
+        instance_id = self.selected_instance_id or "default"
+        try:
+            fw_env = await backend.list_firewall(instance_id)
+            dns_env = await backend.list_dns(instance_id)
+            mon_env = await backend.get_monitor_snapshot(
+                instance_id, self.monitor_range
+            )
+        except Exception as e:
+            logging.exception(f"Error loading manage data via backend: {e}")
+            return
+
+        if fw_env.get("ok"):
+            rules = fw_env["data"].get("items", [])
+            self.firewall_rules = [
+                {
+                    "id": str(r.get("id", "")),
+                    "action": str(r.get("action", "ALLOW")),
+                    "protocol": str(r.get("protocol", "TCP")),
+                    "port": str(r.get("port", "*")),
+                    "source": str(r.get("source", "0.0.0.0/0")),
+                    "desc": str(r.get("desc", "")),
+                    "enabled": bool(r.get("enabled", True)),
+                }
+                for r in rules
+            ]
+
+        if dns_env.get("ok"):
+            records = dns_env["data"].get("items", [])
+            self.dns_records = [
+                {
+                    "id": str(r.get("id", "")),
+                    "name": str(r.get("name", "@")),
+                    "type": str(r.get("type", "A")),
+                    "value": str(r.get("value", "")),
+                    "ttl": str(r.get("ttl", "600")),
+                    "status": str(r.get("status", "active")),
+                }
+                for r in records
+            ]
+
+        if mon_env.get("ok"):
+            data = mon_env["data"]
+            series = data.get("series", [])
+            events = data.get("events", [])
+            if series:
+                self.monitor_data = [
+                    {
+                        "time": str(p.get("time", "")),
+                        "cpu": int(p.get("cpu", 0)),
+                        "memory": int(p.get("memory", 0)),
+                        "net_in": int(p.get("net_in", 0)),
+                        "net_out": int(p.get("net_out", 0)),
+                        "disk": int(p.get("disk", 0)),
+                    }
+                    for p in series
+                ]
+            if events:
+                self.recent_events = [
+                    {
+                        "time": str(e.get("time", "")),
+                        "level": str(e.get("level", "info")),
+                        "icon": str(e.get("icon", "info")),
+                        "message": str(e.get("message", "")),
+                    }
+                    for e in events
+                ]
 
     @rx.event
     async def refresh_instances(self):
@@ -417,8 +532,30 @@ class ServersState(rx.State):
         self.manage_tab = tab
 
     @rx.event
-    def set_monitor_range(self, r: str):
+    async def set_monitor_range(self, r: str):
         self.monitor_range = r
+        from app.services import backend
+
+        instance_id = self.selected_instance_id or "default"
+        try:
+            env = await backend.get_monitor_series(instance_id, r)
+        except Exception as e:
+            logging.exception(f"Error refreshing monitor range: {e}")
+            return
+        if env.get("ok"):
+            series = env["data"].get("series", [])
+            if series:
+                self.monitor_data = [
+                    {
+                        "time": str(p.get("time", "")),
+                        "cpu": int(p.get("cpu", 0)),
+                        "memory": int(p.get("memory", 0)),
+                        "net_in": int(p.get("net_in", 0)),
+                        "net_out": int(p.get("net_out", 0)),
+                        "disk": int(p.get("disk", 0)),
+                    }
+                    for p in series
+                ]
 
     @rx.event
     def set_filter_region(self, region: str):
@@ -428,30 +565,85 @@ class ServersState(rx.State):
     def set_search_query(self, q: str):
         self.search_query = q
 
-    @rx.event
-    async def toggle_auto_renew(self, instance_id: str):
+    async def _resolve_auth_email(self) -> str:
+        """Resolve the current user's email using a layered fallback chain.
+
+        Priority:
+        1. Live SessionState cookie (production path).
+        2. Persisted session token via unified backend `current_session`.
+        3. Persisted session token via user_store direct lookup.
+        4. Test-only `test_auth_email` field (last resort for event tests).
+
+        Returns "" if no authenticated identity can be resolved.
+        """
         from app.states.session_state import SessionState
+        from app.services import backend
 
-        session = await self.get_state(SessionState)
-        email = (session.auth_email or "").strip().lower()
-        session_token = (session.session_token or "").strip()
+        try:
+            session = await self.get_state(SessionState)
+            email = (session.auth_email or "").strip().lower()
+            logged_in = session.is_logged_in_cookie == "true"
+            session_token = (session.session_token or "").strip()
+        except Exception as e:
+            logging.exception(f"Error resolving SessionState: {e}")
+            email = ""
+            logged_in = False
+            session_token = ""
 
-        # Fallback 1: recover email from persisted session token if
-        # SessionState cookie fields are not yet hydrated.
-        if not email and session_token:
+        if email and logged_in:
+            return email
+
+        if session_token:
+            try:
+                sess_env = await backend.current_session(session_token)
+                if sess_env.get("ok"):
+                    email2 = (
+                        str(sess_env["data"].get("email", "")).strip().lower()
+                    )
+                    if email2:
+                        return email2
+            except Exception as e:
+                logging.exception(f"Error resolving session via backend: {e}")
             try:
                 sess_rec = await user_store.get_session(session_token)
+                if sess_rec:
+                    email3 = str(sess_rec.get("email", "")).strip().lower()
+                    if email3:
+                        return email3
             except Exception as e:
                 logging.exception(
-                    f"Error reading persisted session for auto-renew: {e}"
+                    f"Error resolving session via user_store: {e}"
                 )
-                sess_rec = None
-            if sess_rec:
-                email = str(sess_rec.get("email", "")).strip().lower()
 
-        # Fallback 2: test-only injected auth email for event-level tests.
-        if not email and self.test_auth_email:
-            email = self.test_auth_email.strip().lower()
+        # Instance-level test override (set via `set_test_auth_email`
+        # event or, when Reflex retains it, via constructor kwarg).
+        if self.test_auth_email:
+            return self.test_auth_email.strip().lower()
+
+        # Module-level test override — reliable across freshly
+        # constructed ServersState instances in event tests.
+        if _LOCAL_TEST_AUTH_EMAIL:
+            return _LOCAL_TEST_AUTH_EMAIL
+
+        # Env-var driven local-dev demo mode. Only active when the
+        # operator explicitly opts in by exporting
+        # AIARKS_LOCAL_DEMO_EMAIL=demo@aiarks.com. Normal UI users
+        # without this env var still get the login prompt.
+        env_demo = _get_env_demo_email()
+        if env_demo:
+            try:
+                profile = await user_store.get_public_profile(env_demo)
+            except Exception as e:
+                logging.exception(f"Error verifying demo email profile: {e}")
+                profile = {}
+            if profile:
+                return env_demo
+
+        return ""
+
+    @rx.event
+    async def toggle_auto_renew(self, instance_id: str):
+        email = await self._resolve_auth_email()
 
         if not email:
             yield rx.toast(
@@ -498,33 +690,12 @@ class ServersState(rx.State):
 
     @rx.event
     async def load_console(self):
-        from app.states.session_state import SessionState
+        from app.services import backend
         from datetime import datetime, timezone
         import asyncio
 
-        session = await self.get_state(SessionState)
-        email = (session.auth_email or "").strip().lower()
-        logged_in = session.is_logged_in_cookie == "true"
-        session_token = (session.session_token or "").strip()
-
-        # Fallback: if SessionState hasn't been hydrated yet, try the
-        # persisted session token to resolve the authenticated email.
-        if (not email or not logged_in) and session_token:
-            try:
-                sess_rec = await user_store.get_session(session_token)
-            except Exception as e:
-                logging.exception(f"Error reading persisted session: {e}")
-                sess_rec = None
-            if sess_rec:
-                email = str(sess_rec.get("email", "")).strip().lower()
-                logged_in = bool(email)
-
-        # Test-only fallback: allows event-level tests to bypass cookie
-        # hydration by setting `test_auth_email`. Production is unaffected
-        # because this field defaults to "" and is never set by the UI.
-        if (not email or not logged_in) and self.test_auth_email:
-            email = self.test_auth_email.strip().lower()
-            logged_in = bool(email)
+        email = await self._resolve_auth_email()
+        logged_in = bool(email)
 
         self.is_loaded = True
 
@@ -545,26 +716,38 @@ class ServersState(rx.State):
 
         self.is_authenticated = True
 
-        # Set loading vs refreshing based on whether we've loaded before
         is_first = not self._initial_loaded
         self.list_status = "loading" if is_first else "refreshing"
         self.error_message_en = ""
         self.error_message_zh = ""
         yield
 
-        # Simulate network round-trip so UI status is visible
         await asyncio.sleep(0.3)
 
+        # Route through unified backend facade
         try:
-            raw_instances = await user_store.get_user_instances(email)
-            raw_orders = await user_store.get_user_orders(email)
-        except Exception as e:
-            logging.exception(f"Error loading console data: {e}")
-            self.list_status = "error"
-            self.error_message_en = (
-                "Failed to load console data. Please try refreshing."
+            inst_env = await backend.list_instances(
+                email, page=1, page_size=100
             )
-            self.error_message_zh = "加载控制台数据失败，请点击刷新重试。"
+            bill_env = await backend.list_billing(email, page=1, page_size=100)
+        except Exception as e:
+            logging.exception(f"Error loading console via backend: {e}")
+            inst_env = {
+                "ok": False,
+                "error": {"message": {"en": str(e), "zh": str(e)}},
+            }
+            bill_env = {"ok": False}
+
+        if not inst_env.get("ok"):
+            self.list_status = "error"
+            err = inst_env.get("error") or {}
+            msg = err.get("message") or {}
+            self.error_message_en = msg.get(
+                "en", "Failed to load console data."
+            )
+            self.error_message_zh = msg.get(
+                "zh", "加载控制台数据失败,请点击刷新重试。"
+            )
             self._initial_loaded = True
             yield rx.toast(
                 title="Load failed / 加载失败",
@@ -573,6 +756,11 @@ class ServersState(rx.State):
                 close_button=True,
             )
             return
+
+        raw_instances = inst_env["data"].get("items", [])
+        bill_items = (
+            bill_env["data"].get("items", []) if bill_env.get("ok") else []
+        )
 
         normalized: list[ServerInstance] = []
         for inst in raw_instances:
@@ -605,31 +793,19 @@ class ServersState(rx.State):
             )
         self.instances = normalized
 
+        # Backend already returns billing rows in envelope-shaped form.
         bills: list[BillingRecord] = []
-        for order in raw_orders:
-            created_at = str(order.get("created_at", ""))
-            if "T" in created_at:
-                date_part = created_at.split("T")[0]
-            else:
-                date_part = created_at[:10] if created_at else "-"
-            plan_name = str(order.get("plan_name", "-"))
-            currency = str(order.get("currency", "CNY"))
-            symbol = "¥" if currency.upper() == "CNY" else "$"
-            try:
-                amount_val = float(order.get("amount", 0))
-            except (TypeError, ValueError):
-                amount_val = 0.0
+        for row in bill_items:
             bills.append(
                 {
-                    "id": "#" + str(order.get("id", "")),
-                    "date": date_part,
-                    "item": f"{plan_name} · 开通",
-                    "cycle": str(order.get("cycle", "-")),
-                    "amount": f"{symbol}{amount_val:.2f}",
-                    "status": str(order.get("status", "paid")),
+                    "id": str(row.get("id", "")),
+                    "date": str(row.get("date", "-")),
+                    "item": str(row.get("item", "-")),
+                    "cycle": str(row.get("cycle", "-")),
+                    "amount": str(row.get("amount", "-")),
+                    "status": str(row.get("status", "paid")),
                 }
             )
-        bills.reverse()
         self.billing_records = bills
 
         if self.instances:
@@ -647,17 +823,30 @@ class ServersState(rx.State):
         self._initial_loaded = True
 
     @rx.event
-    def toggle_firewall_rule(self, rule_id: str):
-        for i, r in enumerate(self.firewall_rules):
-            if r["id"] == rule_id:
+    async def toggle_firewall_rule(self, rule_id: str):
+        for i, rule in enumerate(self.firewall_rules):
+            if rule["id"] == rule_id:
                 self.firewall_rules[i]["enabled"] = not self.firewall_rules[i][
                     "enabled"
                 ]
                 break
+        # Persist through unified backend facade (best-effort)
+        instance_id = self.selected_instance_id or "default"
+        try:
+            from app.services import backend
+
+            env = await backend.toggle_firewall(instance_id, rule_id)
+            if not env.get("ok"):
+                logging.warning(
+                    f"Firewall toggle backend returned error: {env}"
+                )
+        except Exception as e:
+            logging.exception(f"Error toggling firewall via backend: {e}")
 
     @rx.event
-    def select_instance(self, instance_id: str):
+    async def select_instance(self, instance_id: str):
         self.selected_instance_id = instance_id
+        yield ServersState.load_manage_data
 
     @rx.var
     def filtered_instances(self) -> list[ServerInstance]:

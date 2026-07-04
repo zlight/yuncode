@@ -427,9 +427,158 @@ def api_spec_page() -> rx.Component:
             [
                 header,
                 top_row,
+                _request_flow_showcase(),
                 example_row,
                 _biz_codes_table(),
             ]
         ),
         footer(),
+    )
+
+
+def _flow_step(
+    idx: str,
+    title_en: str,
+    title_zh: str,
+    body_en: str,
+    body_zh: str,
+    icon: str,
+    accent: str = "cyan",
+) -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(
+                idx,
+                class_name=f"text-[10px] font-bold text-{accent}-300",
+            ),
+            class_name=f"w-8 h-8 rounded-lg bg-{accent}-500/10 border border-{accent}-500/30 flex items-center justify-center mb-3",
+        ),
+        rx.el.div(
+            rx.icon(icon, size=16, class_name=f"text-{accent}-300"),
+            rx.el.span(
+                rx.cond(LanguageState.is_zh, title_zh, title_en),
+                class_name="text-sm font-bold text-white ml-2",
+            ),
+            class_name="flex items-center mb-2",
+        ),
+        rx.el.p(
+            rx.cond(LanguageState.is_zh, body_zh, body_en),
+            class_name="text-[11px] text-slate-400 font-medium leading-relaxed",
+        ),
+        class_name="rounded-xl bg-white/[0.02] border border-white/5 p-4",
+    )
+
+
+def _flow_code_block(code: str) -> rx.Component:
+    return rx.el.pre(
+        rx.el.code(
+            code,
+            class_name="text-[11px] text-slate-100 font-mono leading-relaxed whitespace-pre",
+        ),
+        class_name="p-4 bg-slate-950/70 rounded-lg overflow-auto",
+    )
+
+
+def _request_flow_showcase() -> rx.Component:
+    example_code = """# 1. Frontend event handler (Reflex state)
+class ShopState(rx.State):
+    @rx.event
+    async def handle_purchase(self):
+        from app.services import backend
+        env = await backend.create_order(
+            email=session.auth_email,
+            plan_id=self.selected_plan_id,
+            cycle_id=self.selected_cycle,
+            system_id=self.selected_system,
+            coupon_code=self.coupon,
+        )
+        if env["ok"]:
+            yield rx.toast(f"Order {env['data']['order_id']} created")
+        else:
+            yield rx.toast(env["error"]["message"]["en"])
+
+# 2. Unified backend facade (app/services/backend.py)
+async def create_order(email, plan_id, cycle_id, ...) -> dict:
+    plan = await catalog_store.get_plan(plan_id)
+    if plan is None:
+        return api_response.not_found(resource="plan")
+    ok, code, new_balance = await user_store.deduct_balance_and_charge(
+        email, final_amount)
+    ...
+    return api_response.created(data={
+        "order_id": order_id,
+        "instance_id": instance_id,
+        "amount": final_amount,
+    })
+
+# 3. Unified response envelope (app/services/api_response.py)
+{
+    "ok": True,
+    "http_status": 201,
+    "code": "created",
+    "message": {"en": "Created", "zh": "创建成功"},
+    "data": {"order_id": "AC-...", "instance_id": "hkbgps1-...", ...},
+    "error": null,
+    "meta": {"request_id": "req_...", "timestamp": "..."}
+}"""
+    body = rx.el.div(
+        rx.el.div(
+            _flow_step(
+                "01",
+                "Page Event",
+                "页面事件",
+                "User clicks 'Buy Now'. Reflex state event handler is invoked with form data and current UI selection.",
+                "用户点击「立即购买」。Reflex 状态事件处理器接收表单数据与当前 UI 选择。",
+                "mouse-pointer-click",
+                "cyan",
+            ),
+            _flow_step(
+                "02",
+                "Backend Facade",
+                "后端 Facade",
+                "Event handler calls app.services.backend function (e.g. backend.create_order). No direct SQL / HTTP.",
+                "事件处理器调用 app.services.backend 中的函数（例如 backend.create_order）。无直接 SQL / HTTP。",
+                "layers",
+                "violet",
+            ),
+            _flow_step(
+                "03",
+                "Domain Services",
+                "领域服务",
+                "Facade orchestrates catalog_store, user_store, coupon_store etc. to validate, deduct balance, decrement stock, persist order.",
+                "Facade 编排 catalog_store、user_store、coupon_store 等,完成校验、扣款、扣减库存、持久化订单。",
+                "database",
+                "emerald",
+            ),
+            _flow_step(
+                "04",
+                "Response Envelope",
+                "统一响应",
+                "Returns unified envelope: ok / code / message{en,zh} / data / error / meta. Same shape as future HTTP API.",
+                "返回统一信封: ok / code / message{en,zh} / data / error / meta。与未来 HTTP 接口保持一致。",
+                "package-2",
+                "amber",
+            ),
+            _flow_step(
+                "05",
+                "Frontend State",
+                "前端状态",
+                "Handler inspects env['ok'], updates state vars, shows toast, chains follow-up events (redirect, refresh).",
+                "处理器根据 env['ok'] 更新状态变量,显示 toast,链式触发后续事件(跳转、刷新)。",
+                "refresh-cw",
+                "rose",
+            ),
+            class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-5",
+        ),
+        _flow_code_block(example_code),
+    )
+    return style_card(
+        title=rx.cond(
+            LanguageState.is_zh,
+            "请求流示例: 页面事件 → Backend Facade → 响应信封 → 前端状态",
+            "Request Flow: Page Event → Backend Facade → Envelope → Frontend State",
+        ),
+        icon="workflow",
+        body=body,
+        accent_color="violet",
     )

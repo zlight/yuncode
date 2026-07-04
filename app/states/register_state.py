@@ -199,20 +199,24 @@ class RegisterState(rx.State):
 
         await asyncio.sleep(0.6)
 
+        # Route through unified backend facade (envelope-shaped response)
+        from app.services import backend
+
         try:
-            ok, code, _rec = await user_store.create_user(
+            env = await backend.register(
                 email=email,
                 username=username,
                 password=password,
                 invitation_code=invitation_code,
             )
         except Exception as e:
-            logging.exception(f"Error creating user: {e}")
-            ok, code = False, "error"
+            logging.exception(f"Error creating user via backend: {e}")
+            env = {"ok": False, "code": "internal_error"}
 
         self.is_submitting = False
 
-        if not ok:
+        if not env.get("ok"):
+            code = env.get("code", "")
             if code == "email_exists":
                 self.validation_error_en = "This email is already registered."
                 self.validation_error_zh = "该电子邮箱已被注册。"
@@ -220,10 +224,14 @@ class RegisterState(rx.State):
                 self.validation_error_en = "This username is already taken."
                 self.validation_error_zh = "该用户名已被使用。"
             else:
-                self.validation_error_en = (
-                    "Registration failed. Please try again."
+                err = env.get("error") or {}
+                msg = err.get("message") or {}
+                self.validation_error_en = msg.get(
+                    "en", "Registration failed. Please try again."
                 )
-                self.validation_error_zh = "注册失败，请稍后重试。"
+                self.validation_error_zh = msg.get(
+                    "zh", "注册失败，请稍后重试。"
+                )
             yield rx.toast(
                 title="Registration Error / 注册失败",
                 description=self.validation_error_zh,

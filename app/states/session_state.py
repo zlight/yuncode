@@ -61,10 +61,13 @@ class SessionState(rx.State):
     async def refresh_profile(self):
         if not self.auth_email:
             return
+        from app.services import backend
+
         try:
-            profile = await user_store.get_public_profile(self.auth_email)
+            env = await backend.get_user_profile(self.auth_email)
+            profile = env.get("data") or {} if env.get("ok") else {}
         except Exception as e:
-            logging.exception(f"Error refreshing profile: {e}")
+            logging.exception(f"Error refreshing profile via backend: {e}")
             profile = {}
         if not profile:
             return

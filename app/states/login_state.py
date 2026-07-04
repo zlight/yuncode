@@ -135,28 +135,36 @@ class LoginState(rx.State):
 
         await asyncio.sleep(0.6)
 
+        # Route through unified backend facade (envelope-shaped response)
+        from app.services import backend
+
         try:
-            ok, code, rec = await user_store.verify_password(email, password)
+            env = await backend.login(email, password)
         except Exception as e:
-            logging.exception(f"Error verifying password: {e}")
-            ok, code, rec = False, "error", None
+            logging.exception(f"Error verifying password via backend: {e}")
+            env = {"ok": False, "code": "internal_error"}
 
         self.is_submitting = False
 
-        if not ok:
+        if not env.get("ok"):
+            code = env.get("code", "")
             if code == "not_found":
                 self.validation_error_en = (
                     "Account not found. Please register first."
                 )
                 self.validation_error_zh = "账户不存在，请先注册。"
-            elif code == "wrong_password":
+            elif code in ("invalid_credentials", "wrong_password"):
                 self.validation_error_en = "Incorrect password."
                 self.validation_error_zh = "密码错误。"
             else:
-                self.validation_error_en = (
-                    "Authentication failed. Please try again."
+                err = env.get("error") or {}
+                msg = err.get("message") or {}
+                self.validation_error_en = msg.get(
+                    "en", "Authentication failed. Please try again."
                 )
-                self.validation_error_zh = "认证失败，请稍后重试。"
+                self.validation_error_zh = msg.get(
+                    "zh", "认证失败，请稍后重试。"
+                )
             yield rx.toast(
                 title="Authentication Failed / 认证失败",
                 description=self.validation_error_zh,
@@ -165,11 +173,9 @@ class LoginState(rx.State):
             )
             return
 
-        username = (
-            rec.get("username", email.split("@")[0].capitalize())
-            if rec
-            else email.split("@")[0].capitalize()
-        )
+        profile = env["data"].get("profile", {}) or {}
+        username = profile.get("username") or email.split("@")[0].capitalize()
+
         from app.states.session_state import SessionState
 
         session = await self.get_state(SessionState)

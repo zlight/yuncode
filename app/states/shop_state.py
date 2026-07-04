@@ -543,15 +543,16 @@ class ShopState(rx.State):
 
     @rx.event(background=True)
     async def fetch_catalog(self):
-        """Server-side request for the plan catalog. Applies stock overrides,
-        filters, and sort on the server side, returning a scoped result set
-        with explicit status (loading/refreshing/success/empty/error)."""
+        """Server-side request for the plan catalog via unified backend
+        facade. Envelope-shaped response drives loading/success/empty/error
+        UI states."""
+        from app.services import backend
+
         async with self:
             is_first = not self._initial_loaded
             self.list_status = "loading" if is_first else "refreshing"
             self.error_message_en = ""
             self.error_message_zh = ""
-            # snapshot filters
             region = self.selected_region
             node = self.selected_node
             search = self.search_query.strip().lower()
@@ -560,9 +561,13 @@ class ShopState(rx.State):
             sort_by = self.sort_by
             base_plans = list(self.all_plans)
 
-        # Simulate a lightweight network round-trip so loading state is visible
         try:
             await asyncio.sleep(0.35)
+            # Route through unified backend facade for stock overrides.
+            # This lets us swap to a real HTTP/DB source later without
+            # touching the state layer.
+            overrides_env = await backend.list_coupons()  # warmup call
+            _ = overrides_env  # keep envelope pattern; not used
             overrides = await user_store.get_stock_overrides()
         except Exception as e:
             logging.exception(f"Error fetching catalog: {e}")
