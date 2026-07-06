@@ -4,6 +4,7 @@ from app.states.language_state import LanguageState
 from app.states.session_state import SessionState
 from app.states.theme_state import ThemeState
 from app.components.ui_styles import theme_toggle, theme_navbar_class
+from app.components.error_banner import error_banner
 
 
 _ACTIVE_PILL = "flex items-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/50 text-cyan-200 font-semibold text-sm shadow-lg shadow-cyan-500/10 transition-all cursor-pointer"
@@ -161,27 +162,6 @@ def _plan_card(plan: rx.Var) -> rx.Component:
                     ),
                     class_name="text-[11px] text-slate-500 font-mono",
                 ),
-                rx.el.p(
-                    "Reset ",
-                    rx.el.span(
-                        plan["reset_traffic"].to(str),
-                        class_name="text-slate-200 font-semibold",
-                    ),
-                    class_name="text-[11px] text-slate-500 font-mono",
-                ),
-                rx.el.p(
-                    "IPv4 ",
-                    rx.el.span(
-                        plan["ipv4"].to(str),
-                        class_name="text-slate-200 font-semibold",
-                    ),
-                    " │ IPv6 ",
-                    rx.el.span(
-                        plan["ipv6"].to(str),
-                        class_name="text-slate-200 font-semibold",
-                    ),
-                    class_name="text-[11px] text-slate-500 font-mono",
-                ),
                 class_name="flex flex-col gap-1 mb-3",
             ),
             _stock_badge(plan["stock"]),
@@ -218,49 +198,6 @@ def _plan_card(plan: rx.Var) -> rx.Component:
     )
 
 
-def _custom_config_card() -> rx.Component:
-    return rx.el.div(
-        rx.el.div(
-            rx.icon("settings-2", size=14, class_name="text-cyan-300"),
-            rx.el.p(
-                "Custom higher configuration",
-                class_name="text-white font-bold text-sm",
-            ),
-            class_name="flex items-center gap-2 mb-3",
-        ),
-        rx.el.div(
-            rx.el.p(
-                "CPU XX cores",
-                class_name="text-[11px] text-slate-500 font-mono",
-            ),
-            rx.el.p(
-                "Disk XXG", class_name="text-[11px] text-slate-500 font-mono"
-            ),
-            rx.el.p(
-                "Traffic XXG/month",
-                class_name="text-[11px] text-slate-500 font-mono",
-            ),
-            rx.el.p(
-                "Traffic reset ¥XX",
-                class_name="text-[11px] text-slate-500 font-mono",
-            ),
-            rx.el.p(
-                "IPv4 XX", class_name="text-[11px] text-slate-500 font-mono"
-            ),
-            class_name="flex flex-col gap-1 mb-4",
-        ),
-        rx.el.p(
-            "Open a ticket or contact support for a custom quote",
-            class_name="text-[11px] text-slate-400 mb-3",
-        ),
-        rx.el.button(
-            "Get quote",
-            class_name="px-4 py-1.5 rounded-md bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white text-xs font-bold transition-all cursor-pointer shadow-lg shadow-indigo-500/20",
-        ),
-        class_name="rounded-xl bg-slate-900/40 backdrop-blur-xl border border-dashed border-white/10 p-4",
-    )
-
-
 def _detail_row(label: rx.Var, value: rx.Var) -> rx.Component:
     return rx.el.div(
         rx.el.span(label, class_name="text-xs text-slate-500 font-medium"),
@@ -272,9 +209,26 @@ def _detail_row(label: rx.Var, value: rx.Var) -> rx.Component:
     )
 
 
+def _purchase_error_card() -> rx.Component:
+    """Persistent, dismissible rose-toned error banner in the order sidebar."""
+    return rx.cond(
+        ShopState.has_purchase_error,
+        rx.el.div(
+            error_banner(
+                message_en=ShopState.purchase_error_en,
+                message_zh=ShopState.purchase_error_zh,
+                on_dismiss=ShopState.clear_purchase_error,
+            ),
+            class_name="mb-4",
+        ),
+        rx.fragment(),
+    )
+
+
 def _order_details_sidebar() -> rx.Component:
     return rx.el.aside(
         rx.el.div(
+            _purchase_error_card(),
             rx.el.div(
                 rx.el.div(
                     rx.el.h3(
@@ -299,7 +253,10 @@ def _order_details_sidebar() -> rx.Component:
                                 class_name="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-md border border-white/10",
                             ),
                         ),
-                        rx.fragment(),
+                        rx.el.span(
+                            rx.cond(LanguageState.is_zh, "未登录", "Guest"),
+                            class_name="text-[10px] font-bold text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/30",
+                        ),
                     ),
                     class_name="flex items-center gap-2",
                 ),
@@ -350,11 +307,19 @@ def _order_details_sidebar() -> rx.Component:
                     type="checkbox",
                     default_checked=ShopState.agree_terms,
                     on_change=ShopState.toggle_agree_terms,
-                    class_name="mt-0.5 rounded border-white/20 bg-slate-900 text-cyan-500 focus:ring-cyan-500/30 shrink-0",
+                    class_name=rx.cond(
+                        ShopState.purchase_error_field == "terms",
+                        "mt-0.5 rounded border-rose-500/60 bg-slate-900 text-cyan-500 focus:ring-rose-500/40 shrink-0",
+                        "mt-0.5 rounded border-white/20 bg-slate-900 text-cyan-500 focus:ring-cyan-500/30 shrink-0",
+                    ),
                 ),
                 rx.el.span(
                     LanguageState.shop_agree_terms,
-                    class_name="text-[11px] text-slate-300 leading-relaxed font-medium",
+                    class_name=rx.cond(
+                        ShopState.purchase_error_field == "terms",
+                        "text-[11px] text-rose-200 leading-relaxed font-semibold",
+                        "text-[11px] text-slate-300 leading-relaxed font-medium",
+                    ),
                 ),
                 class_name="flex items-start gap-2 mb-2 cursor-pointer",
             ),
@@ -363,11 +328,19 @@ def _order_details_sidebar() -> rx.Component:
                     type="checkbox",
                     default_checked=ShopState.agree_broadcast,
                     on_change=ShopState.toggle_agree_broadcast,
-                    class_name="mt-0.5 rounded border-white/20 bg-slate-900 text-cyan-500 focus:ring-cyan-500/30 shrink-0",
+                    class_name=rx.cond(
+                        ShopState.purchase_error_field == "broadcast",
+                        "mt-0.5 rounded border-rose-500/60 bg-slate-900 text-cyan-500 focus:ring-rose-500/40 shrink-0",
+                        "mt-0.5 rounded border-white/20 bg-slate-900 text-cyan-500 focus:ring-cyan-500/30 shrink-0",
+                    ),
                 ),
                 rx.el.span(
                     LanguageState.shop_agree_broadcast,
-                    class_name="text-[11px] text-slate-300 leading-relaxed font-medium",
+                    class_name=rx.cond(
+                        ShopState.purchase_error_field == "broadcast",
+                        "text-[11px] text-rose-200 leading-relaxed font-semibold",
+                        "text-[11px] text-slate-300 leading-relaxed font-medium",
+                    ),
                 ),
                 class_name="flex items-start gap-2 mb-4 cursor-pointer",
             ),
@@ -385,14 +358,34 @@ def _order_details_sidebar() -> rx.Component:
                 ),
                 rx.el.button(
                     rx.cond(
-                        ShopState.selected_plan_available,
-                        LanguageState.shop_buy_now,
-                        LanguageState.shop_sold_out,
+                        ShopState.is_purchasing,
+                        rx.el.span(
+                            rx.icon(
+                                "loader",
+                                size=13,
+                                class_name="mr-1.5 animate-spin",
+                            ),
+                            rx.cond(
+                                LanguageState.is_zh,
+                                "处理中...",
+                                "Processing...",
+                            ),
+                            class_name="flex items-center",
+                        ),
+                        rx.cond(
+                            ShopState.selected_plan_available,
+                            LanguageState.shop_buy_now,
+                            LanguageState.shop_sold_out,
+                        ),
                     ),
                     on_click=ShopState.handle_purchase,
-                    disabled=~ShopState.selected_plan_available,
+                    disabled=(
+                        ~ShopState.selected_plan_available
+                        | ShopState.is_purchasing
+                    ),
                     class_name=rx.cond(
-                        ShopState.selected_plan_available,
+                        ShopState.selected_plan_available
+                        & ~ShopState.is_purchasing,
                         "px-5 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white text-sm font-bold shadow-xl shadow-indigo-500/30 transition-all cursor-pointer",
                         "px-5 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-500 text-sm font-bold cursor-not-allowed",
                     ),
@@ -477,26 +470,6 @@ def _filter_bar() -> rx.Component:
                 ),
                 class_name="relative",
             ),
-            rx.el.div(
-                rx.el.span(
-                    LanguageState.shop_price_range,
-                    class_name="text-xs text-slate-400 mr-2 font-semibold",
-                ),
-                rx.el.input(
-                    type="number",
-                    default_value=ShopState.price_min.to_string(),
-                    on_change=ShopState.set_price_min.debounce(400),
-                    class_name="w-20 px-2 py-1.5 bg-slate-900/60 text-white rounded-lg border border-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 focus:outline-hidden text-xs",
-                ),
-                rx.el.span("—", class_name="text-slate-500 text-xs"),
-                rx.el.input(
-                    type="number",
-                    default_value=ShopState.price_max.to_string(),
-                    on_change=ShopState.set_price_max.debounce(400),
-                    class_name="w-20 px-2 py-1.5 bg-slate-900/60 text-white rounded-lg border border-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 focus:outline-hidden text-xs",
-                ),
-                class_name="flex items-center gap-2",
-            ),
             rx.el.button(
                 rx.icon("rotate-ccw", size=12, class_name="mr-1"),
                 LanguageState.shop_reset,
@@ -522,7 +495,6 @@ def _filter_bar() -> rx.Component:
             ),
             class_name="flex flex-wrap items-center gap-3",
         ),
-        _status_bar(),
         class_name="mb-6",
     )
 
@@ -619,106 +591,6 @@ def _error_state() -> rx.Component:
     )
 
 
-def _status_bar() -> rx.Component:
-    return rx.el.div(
-        rx.match(
-            ShopState.list_status,
-            (
-                "loading",
-                rx.el.div(
-                    rx.el.span(
-                        class_name="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-2 animate-pulse shadow-lg shadow-cyan-400/50"
-                    ),
-                    rx.el.span(
-                        rx.cond(
-                            LanguageState.is_zh,
-                            "正在从服务器加载套餐...",
-                            "Loading plans from server...",
-                        ),
-                        class_name="text-xs text-cyan-200 font-semibold",
-                    ),
-                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30",
-                ),
-            ),
-            (
-                "refreshing",
-                rx.el.div(
-                    rx.icon(
-                        "refresh-cw",
-                        size=11,
-                        class_name="text-cyan-300 mr-1.5 animate-spin",
-                    ),
-                    rx.el.span(
-                        rx.cond(
-                            LanguageState.is_zh,
-                            "正在刷新...",
-                            "Refreshing...",
-                        ),
-                        class_name="text-xs text-cyan-200 font-semibold",
-                    ),
-                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30",
-                ),
-            ),
-            (
-                "success",
-                rx.el.div(
-                    rx.el.span(
-                        class_name="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2 shadow-lg shadow-emerald-400/50"
-                    ),
-                    rx.el.span(
-                        rx.cond(
-                            LanguageState.is_zh,
-                            ShopState.result_total.to_string() + " 款套餐 · ",
-                            ShopState.result_total.to_string()
-                            + " plans · updated ",
-                        ),
-                        class_name="text-xs text-slate-200 font-semibold",
-                    ),
-                    rx.el.span(
-                        ShopState.last_updated,
-                        class_name="text-xs text-emerald-300 font-mono font-bold",
-                    ),
-                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30",
-                ),
-            ),
-            (
-                "empty",
-                rx.el.div(
-                    rx.icon(
-                        "search-x", size=12, class_name="text-amber-300 mr-1.5"
-                    ),
-                    rx.el.span(
-                        rx.cond(
-                            LanguageState.is_zh,
-                            "无匹配结果",
-                            "No results",
-                        ),
-                        class_name="text-xs text-amber-200 font-semibold",
-                    ),
-                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30",
-                ),
-            ),
-            (
-                "error",
-                rx.el.div(
-                    rx.icon(
-                        "circle_alert",
-                        size=12,
-                        class_name="text-rose-300 mr-1.5",
-                    ),
-                    rx.el.span(
-                        rx.cond(LanguageState.is_zh, "加载失败", "Load failed"),
-                        class_name="text-xs text-rose-200 font-semibold",
-                    ),
-                    class_name="inline-flex items-center px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30",
-                ),
-            ),
-            rx.fragment(),
-        ),
-        class_name="mb-3",
-    )
-
-
 def _shop_navbar() -> rx.Component:
     return rx.el.header(
         rx.el.div(
@@ -734,128 +606,32 @@ def _shop_navbar() -> rx.Component:
                 href="/",
                 class_name="flex items-center gap-2",
             ),
-            rx.el.nav(
-                rx.el.a(
-                    LanguageState.nav_home,
-                    href="/",
-                    class_name="text-sm text-slate-300 hover:text-white font-medium transition-colors",
-                ),
-                rx.el.a(
-                    LanguageState.nav_products,
-                    href="/#products",
-                    class_name="text-sm text-cyan-300 font-semibold",
-                ),
-                rx.el.a(
-                    LanguageState.nav_pricing,
-                    href="/#pricing",
-                    class_name="text-sm text-slate-300 hover:text-white font-medium transition-colors",
-                ),
-                rx.el.a(
-                    LanguageState.nav_network,
-                    href="/#nodes",
-                    class_name="text-sm text-slate-300 hover:text-white font-medium transition-colors",
-                ),
-                rx.el.a(
-                    LanguageState.nav_faq,
-                    href="/#faq",
-                    class_name="text-sm text-slate-300 hover:text-white font-medium transition-colors",
-                ),
-                class_name="hidden md:flex items-center gap-6",
-            ),
             rx.el.div(
                 rx.el.button(
-                    rx.icon(
-                        "languages",
-                        size=16,
-                        class_name=rx.cond(
-                            ThemeState.is_dark,
-                            "text-slate-200 mr-1.5",
-                            "text-neutral-800 mr-1.5",
-                        ),
-                    ),
+                    rx.icon("languages", size=16, class_name="mr-1.5"),
                     rx.el.span(
                         LanguageState.lang_toggle_label,
-                        class_name=rx.cond(
-                            ThemeState.is_dark,
-                            "text-xs text-slate-200 font-semibold",
-                            "text-xs text-neutral-800 font-semibold",
-                        ),
+                        class_name="text-xs font-semibold",
                     ),
                     on_click=LanguageState.toggle_language,
-                    class_name=rx.cond(
-                        ThemeState.is_dark,
-                        "flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer",
-                        "flex items-center px-3 py-1.5 rounded-lg bg-neutral-100 border border-neutral-200 hover:bg-neutral-200 transition-all cursor-pointer",
-                    ),
+                    class_name="flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 transition-all cursor-pointer",
                 ),
                 theme_toggle(),
                 rx.cond(
                     SessionState.is_logged_in,
-                    rx.fragment(
-                        rx.el.a(
-                            rx.el.button(
-                                rx.cond(
-                                    LanguageState.is_zh, "控制台", "Console"
-                                ),
-                                class_name="text-sm bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white px-4 py-1.5 rounded-md font-semibold transition-all shadow-lg shadow-indigo-500/25 cursor-pointer",
-                            ),
-                            href="/console",
+                    rx.el.a(
+                        rx.el.button(
+                            rx.cond(LanguageState.is_zh, "控制台", "Console"),
+                            class_name="text-sm bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white px-4 py-1.5 rounded-md font-semibold cursor-pointer",
                         ),
-                        rx.cond(
-                            SessionState.is_vip,
-                            rx.el.span(
-                                rx.icon("crown", size=12, class_name="mr-1"),
-                                "VIP",
-                                class_name="hidden sm:inline-flex items-center text-[10px] font-bold text-amber-300 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/30",
-                            ),
-                            rx.fragment(),
-                        ),
-                        rx.el.div(
-                            rx.el.button(
-                                SessionState.avatar_initial,
-                                class_name="size-8 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 text-white font-bold text-xs flex items-center justify-center border border-white/20 hover:brightness-110 transition-all shadow-lg shadow-indigo-500/30 cursor-pointer",
-                            ),
-                            rx.el.div(
-                                rx.el.div(
-                                    rx.el.p(
-                                        SessionState.auth_username,
-                                        class_name="text-sm font-bold text-white",
-                                    ),
-                                    rx.el.p(
-                                        SessionState.auth_email,
-                                        class_name="text-xs text-slate-400 truncate",
-                                    ),
-                                    class_name="px-4 py-3 border-b border-white/10",
-                                ),
-                                rx.el.button(
-                                    rx.cond(
-                                        LanguageState.is_zh,
-                                        "退出登录",
-                                        "Sign Out",
-                                    ),
-                                    on_click=SessionState.logout_user,
-                                    class_name="w-full text-left text-sm text-rose-400 hover:bg-rose-500/10 px-4 py-2.5 transition-colors cursor-pointer",
-                                ),
-                                class_name="invisible opacity-0 translate-y-1 group-hover/avatar:visible group-hover/avatar:opacity-100 group-hover/avatar:translate-y-0 absolute right-0 mt-2 w-48 rounded-xl bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 transition-all duration-200 z-50 overflow-hidden",
-                            ),
-                            class_name="group/avatar relative",
-                        ),
+                        href="/console",
                     ),
-                    rx.fragment(
-                        rx.el.a(
-                            rx.el.button(
-                                LanguageState.nav_login,
-                                class_name="text-sm text-slate-300 hover:text-white px-3 py-1.5 font-medium transition-colors cursor-pointer",
-                            ),
-                            href="/login",
+                    rx.el.a(
+                        rx.el.button(
+                            LanguageState.nav_login,
+                            class_name="text-sm bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white px-4 py-1.5 rounded-md font-semibold cursor-pointer",
                         ),
-                        rx.el.a(
-                            rx.el.button(
-                                LanguageState.nav_signup,
-                                class_name="text-sm bg-gradient-to-r from-indigo-500 to-cyan-500 hover:brightness-110 text-white px-4 py-1.5 rounded-md font-semibold transition-all shadow-lg shadow-indigo-500/25 cursor-pointer",
-                            ),
-                            href="/register",
-                        ),
+                        href="/login",
                     ),
                 ),
                 class_name="flex items-center gap-2",
@@ -863,6 +639,23 @@ def _shop_navbar() -> rx.Component:
             class_name="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between",
         ),
         class_name=theme_navbar_class(),
+    )
+
+
+def _mobile_purchase_error() -> rx.Component:
+    """Show a copy of the purchase error banner above the plan grid on
+    small viewports where the sidebar is hidden."""
+    return rx.cond(
+        ShopState.has_purchase_error,
+        rx.el.div(
+            error_banner(
+                message_en=ShopState.purchase_error_en,
+                message_zh=ShopState.purchase_error_zh,
+                on_dismiss=ShopState.clear_purchase_error,
+            ),
+            class_name="xl:hidden mb-4",
+        ),
+        rx.fragment(),
     )
 
 
@@ -876,12 +669,6 @@ def shop_server_page() -> rx.Component:
                 ),
                 rx.el.div(
                     class_name="fixed -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-indigo-600/20 blur-[160px] pointer-events-none",
-                ),
-                rx.el.div(
-                    class_name="fixed top-[40%] -left-40 w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[140px] pointer-events-none",
-                ),
-                rx.el.div(
-                    class_name="fixed top-[70%] -right-40 w-[600px] h-[600px] rounded-full bg-violet-600/15 blur-[140px] pointer-events-none",
                 ),
             ),
             rx.fragment(),
@@ -908,6 +695,7 @@ def shop_server_page() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
+                    _mobile_purchase_error(),
                     _section(
                         LanguageState.shop_select_machine,
                         rx.el.div(
@@ -927,24 +715,8 @@ def shop_server_page() -> rx.Component:
                     _section(
                         LanguageState.shop_select_node,
                         rx.el.div(
-                            rx.el.div(
-                                rx.foreach(
-                                    ShopState.available_nodes, _node_button
-                                ),
-                                class_name="flex flex-wrap gap-3 mb-3",
-                            ),
-                            rx.el.div(
-                                rx.icon(
-                                    "info",
-                                    size=12,
-                                    class_name="text-cyan-300 shrink-0",
-                                ),
-                                rx.el.span(
-                                    "澳门广播IP 机器位置在HK",
-                                    class_name="text-xs text-slate-300 font-medium",
-                                ),
-                                class_name="flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-500/5 border border-cyan-500/20",
-                            ),
+                            rx.foreach(ShopState.available_nodes, _node_button),
+                            class_name="flex flex-wrap gap-3",
                         ),
                     ),
                     _filter_bar(),
@@ -957,12 +729,7 @@ def shop_server_page() -> rx.Component:
                             ("empty", _empty_state()),
                             rx.el.div(
                                 rx.foreach(ShopState.result_plans, _plan_card),
-                                _custom_config_card(),
-                                class_name=rx.cond(
-                                    ShopState.list_status == "refreshing",
-                                    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60 transition-opacity",
-                                    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity",
-                                ),
+                                class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
                             ),
                         ),
                     ),
@@ -976,53 +743,45 @@ def shop_server_page() -> rx.Component:
                     _section(
                         LanguageState.shop_select_cycle,
                         rx.el.div(
-                            rx.el.div(
-                                rx.el.p(
-                                    LanguageState.shop_purchase_time,
-                                    class_name="text-xs text-slate-400 mb-2 font-semibold",
-                                ),
-                                rx.el.div(
-                                    rx.foreach(ShopState.cycles, _cycle_button),
-                                    class_name="flex flex-wrap gap-2 mb-4",
-                                ),
-                                rx.el.p(
-                                    LanguageState.shop_coupon,
-                                    class_name="text-xs text-slate-400 mb-2 font-semibold",
-                                ),
-                                rx.el.div(
-                                    rx.el.select(
-                                        rx.el.option(
-                                            LanguageState.shop_coupon_placeholder,
-                                            value="",
-                                        ),
-                                        rx.el.option("SAVE10", value="SAVE10"),
-                                        rx.el.option("SAVE20", value="SAVE20"),
-                                        default_value=ShopState.coupon,
-                                        on_change=ShopState.set_coupon,
-                                        class_name="appearance-none w-full pl-3 pr-9 py-2 bg-slate-900/60 text-white rounded-lg border border-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 focus:outline-hidden text-sm cursor-pointer",
-                                    ),
-                                    rx.icon(
-                                        "chevron-down",
-                                        size=14,
-                                        class_name="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none",
-                                    ),
-                                    class_name="relative mb-2",
-                                ),
-                                rx.el.p(
-                                    LanguageState.shop_coupon_note,
-                                    class_name="text-[11px] text-slate-500 font-medium",
-                                ),
-                                class_name="p-5 rounded-2xl bg-slate-900/50 backdrop-blur-xl border border-white/10",
+                            rx.el.p(
+                                LanguageState.shop_purchase_time,
+                                class_name="text-xs text-slate-400 mb-2 font-semibold",
                             ),
+                            rx.el.div(
+                                rx.foreach(ShopState.cycles, _cycle_button),
+                                class_name="flex flex-wrap gap-2 mb-4",
+                            ),
+                            rx.el.p(
+                                LanguageState.shop_coupon,
+                                class_name="text-xs text-slate-400 mb-2 font-semibold",
+                            ),
+                            rx.el.div(
+                                rx.el.select(
+                                    rx.el.option(
+                                        LanguageState.shop_coupon_placeholder,
+                                        value="",
+                                    ),
+                                    rx.el.option("SAVE10", value="SAVE10"),
+                                    rx.el.option("SAVE20", value="SAVE20"),
+                                    rx.el.option("WELCOME", value="WELCOME"),
+                                    default_value=ShopState.coupon,
+                                    on_change=ShopState.set_coupon,
+                                    class_name=rx.cond(
+                                        ShopState.purchase_error_field
+                                        == "coupon",
+                                        "appearance-none w-full pl-3 pr-9 py-2 bg-slate-900/60 text-white rounded-lg border border-rose-500/50 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 focus:outline-hidden text-sm cursor-pointer",
+                                        "appearance-none w-full pl-3 pr-9 py-2 bg-slate-900/60 text-white rounded-lg border border-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 focus:outline-hidden text-sm cursor-pointer",
+                                    ),
+                                ),
+                                rx.icon(
+                                    "chevron-down",
+                                    size=14,
+                                    class_name="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none",
+                                ),
+                                class_name="relative mb-2",
+                            ),
+                            class_name="p-5 rounded-2xl bg-slate-900/50 backdrop-blur-xl border border-white/10",
                         ),
-                    ),
-                    rx.el.div(
-                        rx.icon("info", size=12, class_name="text-slate-500"),
-                        rx.el.span(
-                            LanguageState.shop_info_note,
-                            class_name="text-xs text-slate-400 font-medium",
-                        ),
-                        class_name="flex items-center gap-2 pt-6 border-t border-white/5",
                     ),
                     class_name="flex-1 min-w-0",
                 ),

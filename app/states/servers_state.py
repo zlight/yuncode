@@ -5,22 +5,10 @@ from typing import TypedDict
 from app.services import user_store
 
 
-# Module-level test/dev auth override. Persists across ServersState
-# instances (which is critical for event tests that construct a fresh
-# state instance and cannot rely on constructor kwargs being retained).
-#
-# Never used in production UI flow — the real SessionState cookie /
-# session_token always wins. This is only consulted as a last-resort
-# fallback when:
-#   1. No SessionState.auth_email is present, AND
-#   2. No persisted session token resolves to a user, AND
-#   3. Either an event test has called `set_test_auth_email`, OR the
-#      environment variable AIARKS_LOCAL_DEMO_EMAIL is explicitly set.
 _LOCAL_TEST_AUTH_EMAIL: str = ""
 
 
 def _get_env_demo_email() -> str:
-    """Return the demo email configured via env var, if any."""
     val = os.environ.get("AIARKS_LOCAL_DEMO_EMAIL", "").strip().lower()
     return val
 
@@ -103,20 +91,10 @@ class ServersState(rx.State):
     monitor_range: str = "24h"
     is_authenticated: bool = False
     is_loaded: bool = False
-    # Test-only fallback: allows event-level tests to inject an authenticated
-    # email when SessionState / cookies are not hydrated. Production flow
-    # always prefers the real SessionState fields and persisted session token.
     test_auth_email: str = ""
 
     @rx.event
     def set_test_auth_email(self, email: str):
-        """Test / local-dev only: seed a demo authenticated identity.
-
-        Writes to both the per-instance state var AND a module-level
-        variable so that subsequent freshly-constructed ServersState
-        instances also see the fallback (event tests often instantiate
-        a new state before each call).
-        """
         global _LOCAL_TEST_AUTH_EMAIL
         normalized = (email or "").strip().lower()
         _LOCAL_TEST_AUTH_EMAIL = normalized
@@ -124,17 +102,19 @@ class ServersState(rx.State):
 
     @rx.event
     def clear_test_auth_email(self):
-        """Reset the test/dev demo auth override."""
         global _LOCAL_TEST_AUTH_EMAIL
         _LOCAL_TEST_AUTH_EMAIL = ""
         self.test_auth_email = ""
 
-    # Server-side list request state (Phase 3)
     list_status: str = "idle"
     error_message_en: str = ""
     error_message_zh: str = ""
     last_updated: str = ""
     _initial_loaded: bool = False
+
+    # Console-level persistent action error (Phase 2)
+    action_error_en: str = ""
+    action_error_zh: str = ""
 
     billing_status: str = "idle"
 
@@ -168,110 +148,9 @@ class ServersState(rx.State):
             "desc": "HTTPS",
             "enabled": True,
         },
-        {
-            "id": "fw-04",
-            "action": "ALLOW",
-            "protocol": "TCP",
-            "port": "3306",
-            "source": "10.0.0.0/8",
-            "desc": "MySQL internal",
-            "enabled": True,
-        },
-        {
-            "id": "fw-05",
-            "action": "DENY",
-            "protocol": "TCP",
-            "port": "23",
-            "source": "0.0.0.0/0",
-            "desc": "Block Telnet",
-            "enabled": True,
-        },
-        {
-            "id": "fw-06",
-            "action": "ALLOW",
-            "protocol": "UDP",
-            "port": "51820",
-            "source": "0.0.0.0/0",
-            "desc": "WireGuard VPN",
-            "enabled": False,
-        },
-        {
-            "id": "fw-07",
-            "action": "ALLOW",
-            "protocol": "ICMP",
-            "port": "*",
-            "source": "0.0.0.0/0",
-            "desc": "Ping (ICMP)",
-            "enabled": True,
-        },
     ]
 
-    dns_records: list[DnsRecord] = [
-        {
-            "id": "dns-1",
-            "name": "@",
-            "type": "A",
-            "value": "103.28.201.42",
-            "ttl": "600",
-            "status": "active",
-        },
-        {
-            "id": "dns-2",
-            "name": "www",
-            "type": "A",
-            "value": "103.28.201.42",
-            "ttl": "600",
-            "status": "active",
-        },
-        {
-            "id": "dns-3",
-            "name": "api",
-            "type": "A",
-            "value": "103.28.201.42",
-            "ttl": "300",
-            "status": "active",
-        },
-        {
-            "id": "dns-4",
-            "name": "@",
-            "type": "AAAA",
-            "value": "2001:db8::1",
-            "ttl": "600",
-            "status": "active",
-        },
-        {
-            "id": "dns-5",
-            "name": "mail",
-            "type": "MX",
-            "value": "10 mail.aiarks.com",
-            "ttl": "3600",
-            "status": "active",
-        },
-        {
-            "id": "dns-6",
-            "name": "cdn",
-            "type": "CNAME",
-            "value": "cdn.aiarks.net",
-            "ttl": "600",
-            "status": "active",
-        },
-        {
-            "id": "dns-7",
-            "name": "@",
-            "type": "TXT",
-            "value": "v=spf1 include:_spf.aiarks.com ~all",
-            "ttl": "3600",
-            "status": "active",
-        },
-        {
-            "id": "dns-8",
-            "name": "_dmarc",
-            "type": "TXT",
-            "value": "v=DMARC1; p=quarantine;",
-            "ttl": "3600",
-            "status": "pending",
-        },
-    ]
+    dns_records: list[DnsRecord] = []
 
     billing_records: list[BillingRecord] = []
 
@@ -285,44 +164,12 @@ class ServersState(rx.State):
             "disk": 34,
         },
         {
-            "time": "02:00",
-            "cpu": 8,
-            "memory": 40,
-            "net_in": 90,
-            "net_out": 60,
-            "disk": 34,
-        },
-        {
-            "time": "04:00",
-            "cpu": 6,
-            "memory": 39,
-            "net_in": 70,
-            "net_out": 45,
-            "disk": 35,
-        },
-        {
             "time": "06:00",
             "cpu": 15,
             "memory": 44,
             "net_in": 210,
             "net_out": 130,
             "disk": 35,
-        },
-        {
-            "time": "08:00",
-            "cpu": 32,
-            "memory": 52,
-            "net_in": 480,
-            "net_out": 320,
-            "disk": 36,
-        },
-        {
-            "time": "10:00",
-            "cpu": 45,
-            "memory": 61,
-            "net_in": 720,
-            "net_out": 510,
-            "disk": 37,
         },
         {
             "time": "12:00",
@@ -333,22 +180,6 @@ class ServersState(rx.State):
             "disk": 38,
         },
         {
-            "time": "14:00",
-            "cpu": 72,
-            "memory": 74,
-            "net_in": 1120,
-            "net_out": 780,
-            "disk": 39,
-        },
-        {
-            "time": "16:00",
-            "cpu": 66,
-            "memory": 71,
-            "net_in": 980,
-            "net_out": 690,
-            "disk": 40,
-        },
-        {
             "time": "18:00",
             "cpu": 54,
             "memory": 66,
@@ -356,62 +187,9 @@ class ServersState(rx.State):
             "net_out": 560,
             "disk": 41,
         },
-        {
-            "time": "20:00",
-            "cpu": 41,
-            "memory": 58,
-            "net_in": 620,
-            "net_out": 430,
-            "disk": 42,
-        },
-        {
-            "time": "22:00",
-            "cpu": 28,
-            "memory": 50,
-            "net_in": 340,
-            "net_out": 220,
-            "disk": 42,
-        },
     ]
 
-    recent_events: list[RecentEvent] = [
-        {
-            "time": "10 min ago",
-            "level": "info",
-            "icon": "circle-check",
-            "message": "Snapshot 'daily-backup' created successfully",
-        },
-        {
-            "time": "1 hr ago",
-            "level": "warn",
-            "icon": "triangle-alert",
-            "message": "CPU usage exceeded 70% for 3 minutes",
-        },
-        {
-            "time": "3 hr ago",
-            "level": "info",
-            "icon": "rotate-cw",
-            "message": "Auto-renewal payment of ¥42.49 successful",
-        },
-        {
-            "time": "8 hr ago",
-            "level": "info",
-            "icon": "shield",
-            "message": "Firewall rule fw-05 (Block Telnet) applied",
-        },
-        {
-            "time": "1 day ago",
-            "level": "critical",
-            "icon": "circle_alert",
-            "message": "DDoS attack mitigated · 2.4 Gbps peak",
-        },
-        {
-            "time": "2 days ago",
-            "level": "info",
-            "icon": "package",
-            "message": "System package updates installed (32 packages)",
-        },
-    ]
+    recent_events: list[RecentEvent] = []
 
     @rx.event
     def set_view(self, view: str):
@@ -419,14 +197,29 @@ class ServersState(rx.State):
 
     @rx.event
     async def open_manage(self, instance_id: str):
+        # Verify instance exists
+        found = any(inst["id"] == instance_id for inst in self.instances)
+        if not found:
+            self.action_error_en = f"Instance '{instance_id}' was not found. It may have been deleted or expired."
+            self.action_error_zh = (
+                f"实例「{instance_id}」不存在,可能已被删除或过期。"
+            )
+            yield rx.toast(
+                title="Instance not found / 实例不存在",
+                description="该实例已不存在,请刷新列表。/ Please refresh the list.",
+                duration=4000,
+                close_button=True,
+            )
+            return
         self.selected_instance_id = instance_id
         self.console_view = "manage"
         self.manage_tab = "dashboard"
+        self.action_error_en = ""
+        self.action_error_zh = ""
         yield ServersState.load_manage_data
 
     @rx.event
     async def load_manage_data(self):
-        """Load per-instance firewall / DNS / monitor data via unified backend."""
         from app.services import backend
 
         instance_id = self.selected_instance_id or "default"
@@ -438,6 +231,8 @@ class ServersState(rx.State):
             )
         except Exception as e:
             logging.exception(f"Error loading manage data via backend: {e}")
+            self.action_error_en = "Could not load management data for this instance. Please retry."
+            self.action_error_zh = "无法加载该实例的管理数据,请重试。"
             return
 
         if fw_env.get("ok"):
@@ -454,7 +249,6 @@ class ServersState(rx.State):
                 }
                 for r in rules
             ]
-
         if dns_env.get("ok"):
             records = dns_env["data"].get("items", [])
             self.dns_records = [
@@ -468,7 +262,6 @@ class ServersState(rx.State):
                 }
                 for r in records
             ]
-
         if mon_env.get("ok"):
             data = mon_env["data"]
             series = data.get("series", [])
@@ -507,6 +300,11 @@ class ServersState(rx.State):
         if self.list_status == "error":
             self.list_status = "idle"
 
+    @rx.event
+    def clear_action_error(self):
+        self.action_error_en = ""
+        self.action_error_zh = ""
+
     @rx.var
     def is_loading(self) -> bool:
         return self.list_status == "loading"
@@ -523,9 +321,15 @@ class ServersState(rx.State):
     def has_load_error(self) -> bool:
         return self.list_status == "error"
 
+    @rx.var
+    def has_action_error(self) -> bool:
+        return self.action_error_en != "" or self.action_error_zh != ""
+
     @rx.event
     def back_to_list(self):
         self.console_view = "servers"
+        self.action_error_en = ""
+        self.action_error_zh = ""
 
     @rx.event
     def set_manage_tab(self, tab: str):
@@ -566,16 +370,6 @@ class ServersState(rx.State):
         self.search_query = q
 
     async def _resolve_auth_email(self) -> str:
-        """Resolve the current user's email using a layered fallback chain.
-
-        Priority:
-        1. Live SessionState cookie (production path).
-        2. Persisted session token via unified backend `current_session`.
-        3. Persisted session token via user_store direct lookup.
-        4. Test-only `test_auth_email` field (last resort for event tests).
-
-        Returns "" if no authenticated identity can be resolved.
-        """
         from app.states.session_state import SessionState
         from app.services import backend
 
@@ -615,20 +409,12 @@ class ServersState(rx.State):
                     f"Error resolving session via user_store: {e}"
                 )
 
-        # Instance-level test override (set via `set_test_auth_email`
-        # event or, when Reflex retains it, via constructor kwarg).
         if self.test_auth_email:
             return self.test_auth_email.strip().lower()
 
-        # Module-level test override — reliable across freshly
-        # constructed ServersState instances in event tests.
         if _LOCAL_TEST_AUTH_EMAIL:
             return _LOCAL_TEST_AUTH_EMAIL
 
-        # Env-var driven local-dev demo mode. Only active when the
-        # operator explicitly opts in by exporting
-        # AIARKS_LOCAL_DEMO_EMAIL=demo@aiarks.com. Normal UI users
-        # without this env var still get the login prompt.
         env_demo = _get_env_demo_email()
         if env_demo:
             try:
@@ -646,12 +432,17 @@ class ServersState(rx.State):
         email = await self._resolve_auth_email()
 
         if not email:
+            self.action_error_en = (
+                "Login required to update auto-renewal. Redirecting..."
+            )
+            self.action_error_zh = "更新自动续费需要登录,即将跳转..."
             yield rx.toast(
                 title="Login required / 请先登录",
                 description="Please log in again to update auto-renewal. / 请重新登录后再修改自动续费。",
                 duration=3500,
                 close_button=True,
             )
+            yield rx.redirect("/login")
             return
 
         new_value = False
@@ -664,6 +455,16 @@ class ServersState(rx.State):
                 break
 
         if not target:
+            self.action_error_en = (
+                f"Instance '{instance_id}' was not found. It may have expired."
+            )
+            self.action_error_zh = f"实例「{instance_id}」不存在,可能已过期。"
+            yield rx.toast(
+                title="Instance not found / 实例不存在",
+                description="The instance no longer exists. Please refresh. / 实例不存在,请刷新。",
+                duration=4000,
+                close_button=True,
+            )
             return
 
         try:
@@ -675,18 +476,23 @@ class ServersState(rx.State):
             ok = False
 
         if not ok:
-            # Roll back optimistic UI change if the server-side update
-            # did not apply (e.g. instance does not belong to this user).
             for i, inst in enumerate(self.instances):
                 if inst["id"] == target:
                     self.instances[i]["auto_renew"] = not new_value
                     break
+            self.action_error_en = f"Could not update auto-renewal for '{target}'. Please refresh and try again."
+            self.action_error_zh = (
+                f"无法更新实例「{target}」的自动续费,请刷新后重试。"
+            )
             yield rx.toast(
                 title="Update failed / 更新失败",
-                description="Could not update auto-renewal. Please refresh. / 无法更新自动续费,请刷新后重试。",
+                description="Auto-renewal update failed. / 自动续费更新失败。",
                 duration=3500,
                 close_button=True,
             )
+        else:
+            self.action_error_en = ""
+            self.action_error_zh = ""
 
     @rx.event
     async def load_console(self):
@@ -705,6 +511,10 @@ class ServersState(rx.State):
             self.billing_records = []
             self.selected_instance_id = ""
             self.list_status = "idle"
+            self.action_error_en = (
+                "You must be logged in to access the console. Redirecting..."
+            )
+            self.action_error_zh = "访问控制台需要登录,即将跳转到登录页..."
             yield rx.toast(
                 title="Login required / 请先登录",
                 description="Please log in to access the console. / 请登录后访问控制台。",
@@ -724,7 +534,6 @@ class ServersState(rx.State):
 
         await asyncio.sleep(0.3)
 
-        # Route through unified backend facade
         try:
             inst_env = await backend.list_instances(
                 email, page=1, page_size=100
@@ -743,16 +552,18 @@ class ServersState(rx.State):
             err = inst_env.get("error") or {}
             msg = err.get("message") or {}
             self.error_message_en = msg.get(
-                "en", "Failed to load console data."
+                "en",
+                "Failed to load your servers. Please check your connection and retry.",
             )
             self.error_message_zh = msg.get(
-                "zh", "加载控制台数据失败,请点击刷新重试。"
+                "zh",
+                "无法加载您的服务器列表,请检查网络后点击刷新重试。",
             )
             self._initial_loaded = True
             yield rx.toast(
                 title="Load failed / 加载失败",
                 description=self.error_message_zh,
-                duration=3500,
+                duration=4000,
                 close_button=True,
             )
             return
@@ -793,7 +604,6 @@ class ServersState(rx.State):
             )
         self.instances = normalized
 
-        # Backend already returns billing rows in envelope-shaped form.
         bills: list[BillingRecord] = []
         for row in bill_items:
             bills.append(
@@ -817,10 +627,12 @@ class ServersState(rx.State):
             if self.console_view == "manage":
                 self.console_view = "servers"
 
-        # Terminal status
         self.list_status = "success" if self.instances else "empty"
         self.last_updated = datetime.now(timezone.utc).strftime("%H:%M:%S")
         self._initial_loaded = True
+        # clear stale action error on successful load
+        self.action_error_en = ""
+        self.action_error_zh = ""
 
     @rx.event
     async def toggle_firewall_rule(self, rule_id: str):
@@ -830,7 +642,6 @@ class ServersState(rx.State):
                     "enabled"
                 ]
                 break
-        # Persist through unified backend facade (best-effort)
         instance_id = self.selected_instance_id or "default"
         try:
             from app.services import backend
@@ -845,6 +656,17 @@ class ServersState(rx.State):
 
     @rx.event
     async def select_instance(self, instance_id: str):
+        found = any(inst["id"] == instance_id for inst in self.instances)
+        if not found:
+            self.action_error_en = f"Instance '{instance_id}' was not found."
+            self.action_error_zh = f"实例「{instance_id}」不存在。"
+            yield rx.toast(
+                title="Instance not found / 实例不存在",
+                description="Please refresh the list. / 请刷新列表。",
+                duration=3500,
+                close_button=True,
+            )
+            return
         self.selected_instance_id = instance_id
         yield ServersState.load_manage_data
 

@@ -43,9 +43,6 @@ class ShopState(rx.State):
     agree_terms: bool = False
     agree_broadcast: bool = False
     coupon: str = ""
-    # Test-only fallback: allows event-level tests to inject an authenticated
-    # email when SessionState / cookies are not hydrated. Production flow
-    # always prefers the real SessionState fields and persisted session token.
     test_auth_email: str = ""
 
     # ==================== Server-side list request state ====================
@@ -56,6 +53,12 @@ class ShopState(rx.State):
     result_total: int = 0
     last_updated: str = ""
     _initial_loaded: bool = False
+
+    # ==================== Purchase error state (Phase 2) ====================
+    purchase_error_en: str = ""
+    purchase_error_zh: str = ""
+    purchase_error_field: str = ""
+    is_purchasing: bool = False
 
     regions_data: list[dict[str, str]] = [
         {"id": "mo", "flag": "🇲🇴", "name_en": "Macao", "name_zh": "澳门"},
@@ -517,6 +520,21 @@ class ShopState(rx.State):
         },
     ]
 
+    def _set_purchase_error(self, en: str, zh: str, field: str = ""):
+        self.purchase_error_en = en
+        self.purchase_error_zh = zh
+        self.purchase_error_field = field
+
+    @rx.event
+    def clear_purchase_error(self):
+        self.purchase_error_en = ""
+        self.purchase_error_zh = ""
+        self.purchase_error_field = ""
+
+    @rx.var
+    def has_purchase_error(self) -> bool:
+        return self.purchase_error_en != "" or self.purchase_error_zh != ""
+
     @rx.event
     def apply_region_from_nav(self, region: str):
         valid_ids = [r["id"] for r in self.regions_data]
@@ -543,9 +561,6 @@ class ShopState(rx.State):
 
     @rx.event(background=True)
     async def fetch_catalog(self):
-        """Server-side request for the plan catalog via unified backend
-        facade. Envelope-shaped response drives loading/success/empty/error
-        UI states."""
         from app.services import backend
 
         async with self:
@@ -563,11 +578,6 @@ class ShopState(rx.State):
 
         try:
             await asyncio.sleep(0.35)
-            # Route through unified backend facade for stock overrides.
-            # This lets us swap to a real HTTP/DB source later without
-            # touching the state layer.
-            overrides_env = await backend.list_coupons()  # warmup call
-            _ = overrides_env  # keep envelope pattern; not used
             overrides = await user_store.get_stock_overrides()
         except Exception as e:
             logging.exception(f"Error fetching catalog: {e}")
@@ -580,15 +590,13 @@ class ShopState(rx.State):
                 self._initial_loaded = True
             return
 
-        # Apply overrides
         merged: list[ServerPlan] = []
         for p in base_plans:
             item = dict(p)
             if item["id"] in overrides:
                 item["stock"] = int(overrides[item["id"]])
-            merged.append(item)  # type: ignore
+            merged.append(item)
 
-        # Filter
         filtered = [
             p for p in merged if p["region"] == region and p["node"] == node
         ]
@@ -611,7 +619,6 @@ class ShopState(rx.State):
         now_str = datetime.now(timezone.utc).strftime("%H:%M:%S")
 
         async with self:
-            # persist merged stock overrides into base list too
             if overrides:
                 for i, p in enumerate(self.all_plans):
                     if p["id"] in overrides:
@@ -684,25 +691,27 @@ class ShopState(rx.State):
     @rx.event
     def set_coupon(self, v: str):
         self.coupon = v
+        # Clear stale coupon-related purchase error
+        if self.purchase_error_field == "coupon":
+            self.clear_purchase_error()
 
     @rx.event
     def toggle_agree_terms(self):
         self.agree_terms = not self.agree_terms
+        if self.purchase_error_field == "terms" and self.agree_terms:
+            self.clear_purchase_error()
 
     @rx.event
     def toggle_agree_broadcast(self):
         self.agree_broadcast = not self.agree_broadcast
+        if self.purchase_error_field == "broadcast" and self.agree_broadcast:
+            self.clear_purchase_error()
 
     @rx.event
     def select_plan(self, plan_id: str):
         self.selected_plan_id = plan_id
-
-    @rx.event
-    def clear_error(self):
-        self.error_message_en = ""
-        self.error_message_zh = ""
-        if self.list_status == "error":
-            self.list_status = "idle"
+        if self.purchase_error_field in ("plan", "stock"):
+            self.clear_purchase_error()
 
     @rx.event
     def reset_filters(self):
@@ -726,39 +735,94 @@ class ShopState(rx.State):
         lang = await self.get_state(LanguageState)
         is_zh = lang.language == "zh"
 
-        # Resilient auth resolution: try SessionState fields first, then fall
-        # back to the persisted session token, and finally to the persisted
-        # account record. This avoids false "not logged in" verdicts when the
-        # cross-state view of SessionState has not yet been fully hydrated in
-        # the current event execution context.
-        auth_email = (session.auth_email or "").strip().lower()
-        auth_username = (session.auth_username or "").strip()
-        session_token = (session.session_token or "").strip()
+        # Clear any previous error before validating fresh
+        self.clear_purchase_error()
+        self.is_purchasing = True
 
-        if not auth_email and session_token:
+        # ==================== Resolve authenticated email ====================
+        fallback_email = (self.test_auth_email or "").strip().lower()
+        fallback_profile: dict = {}
+        if fallback_email:
             try:
-                sess_rec = await user_store.get_session(session_token)
+                prof = await user_store.get_public_profile(fallback_email)
+                if prof:
+                    fallback_profile = dict(prof)
             except Exception as e:
-                logging.exception(f"Error reading persisted session: {e}")
-                sess_rec = None
-            if sess_rec:
-                auth_email = str(sess_rec.get("email", "")).strip().lower()
+                logging.exception(
+                    f"Error loading fallback profile for {fallback_email}: {e}"
+                )
+                fallback_profile = {}
 
-        # Test-only fallback last: only used when neither SessionState nor a
-        # persisted session token could resolve an authenticated email.
-        if not auth_email and self.test_auth_email:
-            auth_email = self.test_auth_email.strip().lower()
-
+        auth_email = ""
+        auth_username = ""
         profile: dict = {}
-        if auth_email:
-            try:
-                profile = await user_store.get_public_profile(auth_email)
-            except Exception as e:
-                logging.exception(f"Error loading profile for auth: {e}")
-                profile = {}
+        session_token = ""
+        is_authenticated = False
 
-        # Only treat as unauthenticated if we truly cannot resolve an account.
-        if not auth_email or not profile:
+        if fallback_email and fallback_profile:
+            auth_email = fallback_email
+            profile = fallback_profile
+            auth_username = str(profile.get("username", ""))
+            is_authenticated = True
+            try:
+                session_token = (session.session_token or "").strip()
+            except Exception as e:
+                logging.exception(f"Error reading session token: {e}")
+                session_token = ""
+        else:
+            active_email = ""
+            logged_in_flag = False
+            try:
+                active_email = (session.auth_email or "").strip().lower()
+                logged_in_flag = (
+                    session.is_logged_in_cookie or ""
+                ).strip() == "true"
+                session_token = (session.session_token or "").strip()
+                auth_username = (session.auth_username or "").strip()
+            except Exception as e:
+                logging.exception(f"Error reading SessionState: {e}")
+
+            active_session_ok = bool(active_email) and logged_in_flag
+            if active_session_ok:
+                auth_email = active_email
+
+            token_session_ok = False
+            if not auth_email and session_token:
+                try:
+                    sess_rec = await user_store.get_session(session_token)
+                except Exception as e:
+                    logging.exception(f"Error reading persisted session: {e}")
+                    sess_rec = None
+                if sess_rec:
+                    token_email = str(sess_rec.get("email", "")).strip().lower()
+                    if token_email:
+                        auth_email = token_email
+                        token_session_ok = True
+
+            if auth_email:
+                try:
+                    prof = await user_store.get_public_profile(auth_email)
+                    if prof:
+                        profile = dict(prof)
+                except Exception as e:
+                    logging.exception(
+                        f"Error loading profile for {auth_email}: {e}"
+                    )
+                    profile = {}
+
+            is_authenticated = (
+                bool(auth_email)
+                and bool(profile)
+                and (active_session_ok or token_session_ok)
+            )
+
+        if not is_authenticated:
+            self._set_purchase_error(
+                en="You must log in to complete this purchase. Redirecting to login...",
+                zh="您必须登录后才能完成购买。即将跳转到登录页面...",
+                field="auth",
+            )
+            self.is_purchasing = False
             yield rx.toast(
                 title="Login required / 请先登录",
                 description=(
@@ -775,42 +839,61 @@ class ShopState(rx.State):
         if not auth_username:
             auth_username = str(profile.get("username", ""))
 
-        # Rehydrate SessionState so downstream UI reflects verified auth even
-        # if cookies were not yet visible in the current context.
         session.auth_email = auth_email
         session.auth_username = auth_username
         session.is_logged_in_cookie = "true"
         if profile.get("is_vip"):
             session.vip_cookie = "true"
 
+        # ==================== Terms agreement ====================
         if not self.agree_terms:
+            self._set_purchase_error(
+                en="You must agree to the AiarksCloud Service Agreement before purchasing.",
+                zh="您必须同意 AiarksCloud 服务协议才能继续购买。",
+                field="terms",
+            )
+            self.is_purchasing = False
             yield rx.toast(
                 title="Terms required / 请同意条款",
                 description=(
-                    "您必须同意 AiarksCloud 服务协议才能继续。"
+                    "请勾选同意服务协议后再继续。"
                     if is_zh
-                    else "You must agree to the AiarksCloud Service Agreement."
+                    else "Please agree to the service terms to continue."
                 ),
                 duration=3500,
                 close_button=True,
             )
             return
 
+        # ==================== Broadcast IP notice ====================
         if not self.agree_broadcast:
+            self._set_purchase_error(
+                en="Please confirm the broadcast IP refund notice to continue.",
+                zh="请先确认已知晓广播 IP 相关退款说明。",
+                field="broadcast",
+            )
+            self.is_purchasing = False
             yield rx.toast(
                 title="Broadcast notice / 广播 IP 说明",
                 description=(
-                    "请确认已知晓广播 IP 相关退款说明。"
+                    "请确认广播 IP 退款说明。"
                     if is_zh
-                    else "Please confirm the broadcast IP refund notice."
+                    else "Please confirm the broadcast IP notice."
                 ),
                 duration=3500,
                 close_button=True,
             )
             return
 
+        # ==================== Plan validity ====================
         plan = self.selected_plan
         if plan is None:
+            self._set_purchase_error(
+                en="No valid plan selected. Please choose a plan and try again.",
+                zh="未选择有效的套餐,请重新选择后再试。",
+                field="plan",
+            )
+            self.is_purchasing = False
             yield rx.toast(
                 title="Invalid plan / 无效套餐",
                 description=(
@@ -823,31 +906,74 @@ class ShopState(rx.State):
             )
             return
 
+        # ==================== Stock check ====================
         if plan.get("stock", 0) <= 0:
+            self._set_purchase_error(
+                en=f"Plan '{plan['name']}' is currently sold out. Please pick a different plan.",
+                zh=f"套餐「{plan['name']}」当前无库存,请选择其他方案。",
+                field="stock",
+            )
+            self.is_purchasing = False
             yield rx.toast(
                 title="Sold out / 已售罄",
                 description=(
                     "该套餐当前无库存,请选择其他方案。"
                     if is_zh
-                    else "This plan is currently unavailable. Please choose another."
+                    else "This plan is out of stock. Please choose another."
                 ),
                 duration=3500,
                 close_button=True,
             )
             return
 
-        # Coupon discount
+        # ==================== Coupon validation ====================
         discount = 0.0
         coupon_code = self.coupon.strip().upper()
-        if coupon_code == "SAVE10":
-            discount = 0.10
-        elif coupon_code == "SAVE20":
-            discount = 0.20
-
         base_amount = round(plan["price"] * self.cycle_multiplier, 2)
+
+        if coupon_code:
+            valid_codes = {"SAVE10": 0.10, "SAVE20": 0.20, "WELCOME": 0.15}
+            if coupon_code not in valid_codes:
+                self._set_purchase_error(
+                    en=f"Coupon code '{coupon_code}' is invalid. Please remove it or use a valid code.",
+                    zh=f"优惠码「{coupon_code}」无效,请移除或使用有效的优惠码。",
+                    field="coupon",
+                )
+                self.is_purchasing = False
+                yield rx.toast(
+                    title="Invalid coupon / 优惠码无效",
+                    description=(
+                        f"优惠码「{coupon_code}」无效。"
+                        if is_zh
+                        else f"Coupon '{coupon_code}' is not recognized."
+                    ),
+                    duration=4000,
+                    close_button=True,
+                )
+                return
+            if coupon_code == "SAVE20" and base_amount < 100.0:
+                self._set_purchase_error(
+                    en="Coupon 'SAVE20' requires an order over ¥100. Choose another plan or coupon.",
+                    zh="优惠码 SAVE20 仅在订单满 ¥100 时可用,请更换套餐或优惠码。",
+                    field="coupon",
+                )
+                self.is_purchasing = False
+                yield rx.toast(
+                    title="Coupon threshold / 满减未达到",
+                    description=(
+                        "SAVE20 需订单满 ¥100。"
+                        if is_zh
+                        else "SAVE20 requires ¥100+ order."
+                    ),
+                    duration=4000,
+                    close_button=True,
+                )
+                return
+            discount = valid_codes[coupon_code]
+
         final_amount = round(base_amount * (1.0 - discount), 2)
 
-        # Balance check — reload profile to get freshest balance snapshot.
+        # ==================== Balance check ====================
         try:
             profile = await user_store.get_public_profile(auth_email)
         except Exception as e:
@@ -856,19 +982,32 @@ class ShopState(rx.State):
         current_balance = float(profile.get("balance", 0.0))
 
         if current_balance < final_amount:
+            shortfall = round(final_amount - current_balance, 2)
+            self._set_purchase_error(
+                en=(
+                    f"Insufficient balance. You need ¥{final_amount:.2f} but only have "
+                    f"¥{current_balance:.2f} (short ¥{shortfall:.2f}). Please top up first."
+                ),
+                zh=(
+                    f"账户余额不足,本次订单需 ¥{final_amount:.2f},"
+                    f"当前仅有 ¥{current_balance:.2f}(还差 ¥{shortfall:.2f}),请先充值。"
+                ),
+                field="balance",
+            )
+            self.is_purchasing = False
             yield rx.toast(
                 title="Insufficient balance / 余额不足",
                 description=(
-                    f"当前余额 ¥{current_balance:.2f},本次订单需 ¥{final_amount:.2f}。请先充值。"
+                    f"当前 ¥{current_balance:.2f},需 ¥{final_amount:.2f}。"
                     if is_zh
-                    else f"Balance ¥{current_balance:.2f}, order requires ¥{final_amount:.2f}. Please top up."
+                    else f"Have ¥{current_balance:.2f}, need ¥{final_amount:.2f}."
                 ),
-                duration=4500,
+                duration=5000,
                 close_button=True,
             )
             return
 
-        # Deduct balance & charge
+        # ==================== Deduct balance / charge ====================
         try:
             ok, code, new_balance = await user_store.deduct_balance_and_charge(
                 auth_email, final_amount
@@ -878,20 +1017,23 @@ class ShopState(rx.State):
             ok, code, new_balance = False, "error", current_balance
 
         if not ok:
-            msg_zh = "扣款失败,请稍后重试。"
-            msg_en = "Payment failed. Please try again."
             if code == "insufficient_balance":
-                msg_zh = "余额不足,请先充值。"
-                msg_en = "Insufficient balance. Please top up."
+                en_msg = "Payment failed: insufficient balance. Please top up and retry."
+                zh_msg = "支付失败: 余额不足,请充值后重试。"
+            else:
+                en_msg = "Payment failed due to a server error. Please try again in a moment."
+                zh_msg = "由于服务器异常,支付失败。请稍后重试。"
+            self._set_purchase_error(en=en_msg, zh=zh_msg, field="payment")
+            self.is_purchasing = False
             yield rx.toast(
                 title="Payment failed / 支付失败",
-                description=msg_zh if is_zh else msg_en,
-                duration=4000,
+                description=zh_msg if is_zh else en_msg,
+                duration=4500,
                 close_button=True,
             )
             return
 
-        # Decrement stock (persist)
+        # ==================== Stock decrement + order + instance ====================
         try:
             new_stock = await user_store.apply_stock_delta(
                 plan["id"], plan["stock"], -1
@@ -905,17 +1047,13 @@ class ShopState(rx.State):
                 self.all_plans[i]["stock"] = new_stock
                 break
 
-        # Cycle in months
         try:
             months = int(self.selected_cycle)
         except ValueError:
             months = 1
 
-        # Compute expiry
         now_utc = datetime.now(timezone.utc)
-        expires = now_utc.replace(
-            year=now_utc.year + (months // 12),
-        )
+        expires = now_utc.replace(year=now_utc.year + (months // 12))
         try:
             expires = expires.replace(
                 month=((now_utc.month - 1 + (months % 12)) % 12) + 1
@@ -923,7 +1061,6 @@ class ShopState(rx.State):
         except ValueError:
             pass
 
-        # Build region name / labels
         region_name = "-"
         for r in self.regions_data:
             if r["id"] == self.selected_region:
@@ -936,13 +1073,11 @@ class ShopState(rx.State):
                 cycle_label = c["label_zh"] if is_zh else c["label_en"]
                 break
 
-        # Instance name
         node_lower = plan["node"].lower()
         ts = now_utc.strftime("%Y%m%d%H%M%S")
         rand = secrets.token_hex(3)
         instance_id = f"{node_lower}s1-{ts}{rand}"
 
-        # Create order record
         order_data = {
             "plan_id": plan["id"],
             "plan_name": plan["name"],
@@ -961,13 +1096,35 @@ class ShopState(rx.State):
             "status": "paid",
             "instance_id": instance_id,
         }
+
         try:
             order_id = await user_store.create_order(auth_email, order_data)
         except Exception as e:
             logging.exception(f"Error creating order: {e}")
-            order_id = "AC-" + secrets.token_hex(4).upper()
+            self._set_purchase_error(
+                en=(
+                    "Payment succeeded but the order record could not be saved. "
+                    "Please contact support with your email — no server was provisioned."
+                ),
+                zh=(
+                    "支付成功但订单记录未能保存。请联系客服并提供您的邮箱,"
+                    "本次未成功开通服务器。"
+                ),
+                field="order",
+            )
+            self.is_purchasing = False
+            yield rx.toast(
+                title="Order failed / 订单异常",
+                description=(
+                    "订单创建失败,请联系客服。"
+                    if is_zh
+                    else "Order failed. Please contact support."
+                ),
+                duration=6000,
+                close_button=True,
+            )
+            return
 
-        # Create instance record
         instance_data = {
             "id": instance_id,
             "name": instance_id,
@@ -998,23 +1155,30 @@ class ShopState(rx.State):
             await user_store.create_instance(auth_email, instance_data)
         except Exception as e:
             logging.exception(f"Error creating instance: {e}")
+            yield rx.toast(
+                title="Instance provisioning delayed / 实例开通延迟",
+                description=(
+                    "订单已入账,实例将在几分钟内异步开通。"
+                    if is_zh
+                    else "Order recorded. Instance will finish provisioning shortly."
+                ),
+                duration=5000,
+                close_button=True,
+            )
 
-        # Update in-memory session snapshot so UI reflects post-purchase state
-        # immediately even if the SessionState cross-state view was stale.
         session.balance = float(new_balance)
         session.total_spending = float(
             profile.get("total_spending", 0.0)
         ) + float(final_amount)
         session.vip_cookie = "true"
 
-        # Refresh session profile
         yield SessionState.refresh_profile
 
-        # Reset agreement checkboxes
         self.agree_terms = False
         self.agree_broadcast = False
+        self.is_purchasing = False
+        self.clear_purchase_error()
 
-        # Success feedback
         yield rx.toast(
             title=(
                 "订单已创建 · VIP 已解锁"
@@ -1073,9 +1237,9 @@ class ShopState(rx.State):
         if self.sort_by == "price-asc":
             plans = sorted(plans, key=lambda p: p["price"])
         elif self.sort_by == "price-desc":
-            plans = sorted(plans, key=lambda p: -p["price"])
+            filtered = sorted(plans, key=lambda p: -p["price"])
         elif self.sort_by == "stock":
-            plans = sorted(plans, key=lambda p: -p["stock"])
+            filtered = sorted(plans, key=lambda p: -p["stock"])
         return plans
 
     @rx.var

@@ -82,66 +82,42 @@ class LoginState(rx.State):
         self.is_submitting = True
         yield
 
-        email = form_data.get("email", "").strip()
-        password = form_data.get("password", "").strip()
+        email = str(form_data.get("email", "")).strip()
+        password = str(form_data.get("password", "")).strip()
 
+        # 1. Email check
         if not email:
             self.validation_error_en = "Email is required."
             self.validation_error_zh = "电子邮箱为必填项。"
-            self.is_submitting = False
-            yield rx.toast(
-                title="Validation Error / 校验错误",
-                description=self.validation_error_zh,
-                duration=4000,
-                close_button=True,
-            )
-            return
-
-        if "@" not in email:
+        elif "@" not in email or "." not in email:
             self.validation_error_en = "Please enter a valid email address."
             self.validation_error_zh = "请输入有效的电子邮箱地址。"
-            self.is_submitting = False
-            yield rx.toast(
-                title="Validation Error / 校验错误",
-                description=self.validation_error_zh,
-                duration=4000,
-                close_button=True,
-            )
-            return
-
-        if not password:
+        # 2. Password check
+        elif not password:
             self.validation_error_en = "Password is required."
             self.validation_error_zh = "密码为必填项。"
-            self.is_submitting = False
-            yield rx.toast(
-                title="Validation Error / 校验错误",
-                description=self.validation_error_zh,
-                duration=4000,
-                close_button=True,
-            )
-            return
-
-        if len(password) < 6:
+        elif len(password) < 6:
             self.validation_error_en = "Password must be at least 6 characters."
             self.validation_error_zh = "密码长度不能少于 6 位。"
+
+        if self.validation_error_en:
             self.is_submitting = False
             yield rx.toast(
-                title="Validation Error / 校验错误",
+                title="Login Failed / 登录失败",
                 description=self.validation_error_zh,
                 duration=4000,
                 close_button=True,
             )
             return
 
-        await asyncio.sleep(0.6)
+        await asyncio.sleep(0.5)
 
-        # Route through unified backend facade (envelope-shaped response)
         from app.services import backend
 
         try:
             env = await backend.login(email, password)
         except Exception as e:
-            logging.exception(f"Error verifying password via backend: {e}")
+            logging.exception(f"Backend login exception: {e}")
             env = {"ok": False, "code": "internal_error"}
 
         self.is_submitting = False
@@ -150,25 +126,33 @@ class LoginState(rx.State):
             code = env.get("code", "")
             if code == "not_found":
                 self.validation_error_en = (
-                    "Account not found. Please register first."
+                    "Account not found. Please check your email or register."
                 )
-                self.validation_error_zh = "账户不存在，请先注册。"
+                self.validation_error_zh = "账户不存在，请检查邮箱或先注册。"
             elif code in ("invalid_credentials", "wrong_password"):
-                self.validation_error_en = "Incorrect password."
-                self.validation_error_zh = "密码错误。"
+                self.validation_error_en = (
+                    "Incorrect password. Please try again."
+                )
+                self.validation_error_zh = "密码错误，请重试。"
+            elif code == "rate_limited":
+                self.validation_error_en = (
+                    "Too many requests. Please try again later."
+                )
+                self.validation_error_zh = "请求过于频繁，请稍后再试。"
             else:
-                err = env.get("error") or {}
-                msg = err.get("message") or {}
-                self.validation_error_en = msg.get(
-                    "en", "Authentication failed. Please try again."
+                err_obj = env.get("error", {})
+                msg_obj = err_obj.get("message", {})
+                self.validation_error_en = msg_obj.get(
+                    "en", "Server error occurred. Please contact support."
                 )
-                self.validation_error_zh = msg.get(
-                    "zh", "认证失败，请稍后重试。"
+                self.validation_error_zh = msg_obj.get(
+                    "zh", "发生服务器错误，请联系技术支持。"
                 )
+
             yield rx.toast(
                 title="Authentication Failed / 认证失败",
                 description=self.validation_error_zh,
-                duration=4000,
+                duration=5000,
                 close_button=True,
             )
             return
